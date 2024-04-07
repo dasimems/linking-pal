@@ -2,8 +2,11 @@ import express from "express";
 import {
   deleteUserDetailsController,
   getUserDetailsController,
-  updateUserDetailsController
+  updateUserDetailsController,
+  updateUserMoodController,
+  updateUserVideoController
 } from "../../controllers/user";
+import { subRoutes } from "../../utils/_variables";
 const userRoute = express.Router();
 
 userRoute
@@ -11,5 +14,9 @@ userRoute
   .get(getUserDetailsController)
   .patch(updateUserDetailsController)
   .delete(deleteUserDetailsController);
+
+userRoute.route(subRoutes.mood).post(updateUserMoodController);
+userRoute.route(subRoutes.location).post(updateUserMoodController);
+userRoute.route(subRoutes.video).post(updateUserVideoController);
 
 export default userRoute;

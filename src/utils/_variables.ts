@@ -6,7 +6,8 @@ export const v1 = "/v1",
     auth: "/auth",
     user: "/user",
     verifyOTP: "/verify-otp",
-    resendOTP: "/resend-otp"
+    sendOTP: "/send-otp",
+    verifyEmail: "/verify-email"
   },
   subRoutes = {
     login: "/login",
@@ -17,7 +18,10 @@ export const v1 = "/v1",
     referrals: "/referrals",
     changePassword: "/change-password",
     updateEmail: "/update-email",
-    updateProfile: "/update-profile"
+    updateProfile: "/update-profile",
+    mood: "/mood",
+    location: "/location",
+    video: "/video"
   },
   jwtAlgo: Algorithm = "RS512",
   verificationTypes = {
