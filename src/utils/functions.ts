@@ -168,7 +168,9 @@ export const validateValues: <T>(
                 `Your ${key} must not be greater than ${validation.maxLength} characters`
             };
           } else if (
-            (validationValue.regex && !validationValue.regex.test(value)) ||
+            (validationValue.regex &&
+              !validationValue?.regex?.value &&
+              !validationValue.regex.test(value)) ||
             (validationValue?.regex?.value &&
               !validationValue?.regex?.value.test(value))
           ) {

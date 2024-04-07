@@ -34,3 +34,7 @@ export const tooManyRequestResponse: ResponseType = {
   status: 429,
   message: "Too many request"
 };
+export const internalServerResponse: ResponseType = {
+  status: 500,
+  message: "Internal server"
+};

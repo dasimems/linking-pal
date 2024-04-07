@@ -7,10 +7,16 @@ import {
   generateToken,
   validateValues
 } from "../utils/functions";
-import { emailRegExp } from "../utils/regex";
+import {
+  dateRegExp,
+  emailRegExp,
+  passwordRegExp,
+  phoneNumberRegExp
+} from "../utils/regex";
 import {
   badRequestResponse,
   getResponse,
+  internalServerResponse,
   notFoundResponse,
   unauthorizedResponse
 } from "../utils/responses";
@@ -99,7 +105,53 @@ export const loginController: ControllerType = async (req, res) => {
     res.status(response.status).json(response);
   },
   signUpController: ControllerType = (req, res) => {
-    res.send("this is the login");
+    let response = {
+      ...internalServerResponse
+    };
+    const body = req.body;
+    const errors = validateValues(body, {
+      name: true,
+      email: {
+        required: true,
+        regex: {
+          value: emailRegExp,
+          message: "Please input a valid email address"
+        }
+      },
+      mobile_number: {
+        required: true,
+        regex: {
+          value: phoneNumberRegExp,
+          message: "Please input a valid mobile number with it's country code."
+        }
+      },
+      dob: {
+        required: true,
+        regex: {
+          value: dateRegExp,
+          message: "Please input a valid Date Of Birth"
+        }
+      },
+      bio: true,
+      password: {
+        required: true,
+        regex: {
+          value: passwordRegExp,
+          message:
+            "Your password must be at least of 8 characters containing at least 1 uppercase character, lowercase characters, 1 number and one special character"
+        },
+        minLength: 8
+      }
+    });
+
+    if (errors) {
+      response = {
+        ...badRequestResponse,
+        error: errors
+      };
+    } else {
+    }
+    res.status(response.status).json(response);
   },
   forgetPasswordController: ControllerType = (req, res) => {
     res.send("this is the login");
