@@ -49,7 +49,7 @@ export const loginController: ControllerType = async (req, res) => {
 
       try {
         const user = await UserSchema.findOne({
-          $or: [{ email }, { username: email }]
+          email
         });
 
         if (!user) {
@@ -150,6 +150,7 @@ export const loginController: ControllerType = async (req, res) => {
         error: errors
       };
     } else {
+      const {} = body;
     }
     res.status(response.status).json(response);
   },
