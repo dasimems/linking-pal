@@ -35,6 +35,157 @@ export const doRequestBodyHaveError = (
   }
 };
 
+export const validateValues: <T>(
+  data: T | any,
+  validation?: {
+    [name: string]:
+      | {
+          required?: boolean & {
+            value: boolean;
+            message: string;
+          } & any;
+          regex?: RegExp & {
+            value: RegExp;
+            message: string;
+          } & any;
+          minLength?: number & {
+            value: number;
+            message: string;
+          } & any;
+          maxLength?: number & {
+            value: number;
+            message: string;
+          } & any;
+          min?: number & {
+            value: number;
+            message: string;
+          } & any;
+          max?: number & {
+            value: number;
+            message: string;
+          } & any;
+        } & boolean &
+          any;
+  }
+) => {
+  errors: {
+    [name: string]: string;
+  };
+} | null = (data, validation) => {
+  let error: { [name: string]: string } | null = null;
+
+  if (!data || typeof data !== "object") {
+    data = {};
+  }
+
+  if (
+    data &&
+    typeof data === "object" &&
+    validation &&
+    typeof validation === "object"
+  ) {
+    const validationKeys = Object.keys(validation);
+
+    validationKeys.forEach((key: string) => {
+      const value = data[key];
+      const validationValue = validation[key];
+
+      if (validationValue) {
+        if (
+          typeof validationValue !== "object" &&
+          (!value || value.length < 1)
+        ) {
+          error = {
+            ...error,
+            [key]: `Please provide your ${key}`
+          };
+        } else {
+          if (
+            (validationValue.required || validationValue?.required?.value) &&
+            (!value || value.length < 1)
+          ) {
+            error = {
+              ...error,
+              [key]:
+                validationValue.required.message || `Please provide your ${key}`
+            };
+          } else if (
+            !isNaN(Number(value)) &&
+            ((validationValue.min &&
+              Number(validationValue.min) &&
+              Number(value) < validationValue.min) ||
+              (validationValue?.min?.value &&
+                Number(validationValue?.min?.value) &&
+                Number(value) < validationValue.min.value))
+          ) {
+            error = {
+              ...error,
+              [key]:
+                validationValue?.min?.message ||
+                `Your ${key} must not be less than ${validation.min}`
+            };
+          } else if (
+            !isNaN(Number(value)) &&
+            ((validationValue.max &&
+              Number(validationValue.max) &&
+              Number(value) > validationValue.max) ||
+              (validationValue?.max?.value &&
+                Number(validationValue?.max?.value) &&
+                Number(value) > validationValue?.max?.value))
+          ) {
+            error = {
+              ...error,
+              [key]:
+                validationValue?.max?.message ||
+                `Your ${key} must not be greater than ${validation.max}`
+            };
+          } else if (
+            (validationValue.minLength &&
+              Number(validationValue.minLength) &&
+              value.length < validationValue.minLength) ||
+            (validationValue?.minLength?.value &&
+              Number(validationValue?.minLength?.value) &&
+              value.length < validationValue?.minLength?.value)
+          ) {
+            error = {
+              ...error,
+              [key]:
+                validationValue?.minLength?.message ||
+                `Your ${key} must not be less than ${validation.minLength} characters`
+            };
+          } else if (
+            (validationValue.maxLength &&
+              Number(validationValue.maxLength) &&
+              value.length < validationValue.maxLength) ||
+            (validationValue?.maxLength?.value &&
+              Number(validationValue?.maxLength?.value) &&
+              value.length < validationValue?.maxLength?.value)
+          ) {
+            error = {
+              ...error,
+              [key]:
+                validationValue?.maxLength?.message ||
+                `Your ${key} must not be greater than ${validation.maxLength} characters`
+            };
+          } else if (
+            (validationValue.regex && !validationValue.regex.test(value)) ||
+            (validationValue?.regex?.value &&
+              !validationValue?.regex?.value.test(value))
+          ) {
+            error = {
+              ...error,
+              [key]:
+                validationValue?.regex?.message || `Please input a valid ${key}`
+            };
+          }
+        }
+      }
+    });
+  }
+
+  return error;
+};
+
 export const cacheOTP = (otp: number, email: string) => {
   return cache.set(email, { otp }, 180000);
 };
@@ -93,7 +244,6 @@ export const generateOTP = (length: number = 4) => {
 
 export const sendMail = ({
   sender,
-  password,
   receiver,
   subject,
   message

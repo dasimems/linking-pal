@@ -18,19 +18,19 @@ export interface ResponseType {
 
 export interface UserDetailsType {
   email: string;
-  username: string;
   id: string;
-  is_verified: boolean;
+  is_phone_verified: boolean;
+  is_email_verified: boolean;
   created_at: Date;
   referred_by: string | null;
 }
 
 export interface TokenType {
-  userId: string;
-  userType: string;
-  userAgent: string;
+  userId?: string;
+  userType?: string;
+  userAgent?: string;
 }
 
 export interface OTPTokenType extends TokenType {
-  verificationType: string;
+  verificationType?: string;
 }
