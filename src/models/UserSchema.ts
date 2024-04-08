@@ -1,21 +1,35 @@
 import * as mongoose from "mongoose";
+import { UserDetailsType } from "../utils/types";
 
-interface IUser extends Document {
-  email: string;
+type UserDocType = UserDetailsType & Document;
+export interface IUser extends UserDocType {
   password: string;
-  is_phone_verified: boolean;
-  is_email_verified: boolean;
-  created_at: Date;
   referred_by: string | null;
 }
 
 const Schema = mongoose.Schema;
 
 const User = new Schema<IUser>({
+  name: {
+    type: String,
+    required: true
+  },
+  mobile_number: {
+    type: Number,
+    required: true
+  },
   email: {
     type: String,
     required: true,
     unique: true
+  },
+  dob: {
+    type: Date,
+    required: true
+  },
+  bio: {
+    type: String,
+    required: true
   },
   password: {
     type: String,
@@ -28,6 +42,10 @@ const User = new Schema<IUser>({
   is_email_verified: {
     type: Boolean,
     default: false
+  },
+  mood: {
+    type: String,
+    default: null
   },
   created_at: {
     type: Date,

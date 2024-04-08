@@ -18,11 +18,14 @@ export interface ResponseType {
 
 export interface UserDetailsType {
   email: string;
-  id: string;
+  mood: string;
+  name: string;
+  bio: string;
+  dob: Date;
+  mobile_number: number;
   is_phone_verified: boolean;
   is_email_verified: boolean;
   created_at: Date;
-  referred_by: string | null;
 }
 
 export interface TokenType {

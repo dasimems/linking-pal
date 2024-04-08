@@ -1,9 +1,15 @@
-import { LoginBody } from ".";
+import {
+  ForgotPasswordBody,
+  LoginBody,
+  RegisterBody,
+  UserDetailsResponseType
+} from ".";
 import bcrypt from "bcrypt";
 import UserSchema from "../models/UserSchema";
 import { verificationTypes } from "../utils/_variables";
 import {
   createPassword,
+  createUserDetails,
   generateToken,
   validateValues
 } from "../utils/functions";
@@ -20,7 +26,7 @@ import {
   notFoundResponse,
   unauthorizedResponse
 } from "../utils/responses";
-import { ControllerType, ResponseType, UserDetailsType } from "../utils/types";
+import { ControllerType, ResponseType } from "../utils/types";
 
 export const loginController: ControllerType = async (req, res) => {
     const body: LoginBody = req.body;
@@ -44,8 +50,7 @@ export const loginController: ControllerType = async (req, res) => {
         error: errors
       };
     } else {
-      const email = req.body.username;
-      const password = req.body.password;
+      const { email, password } = body;
 
       try {
         const user = await UserSchema.findOne({
@@ -76,25 +81,26 @@ export const loginController: ControllerType = async (req, res) => {
               userAgent: req.headers["user-agent"] as string
             });
           }
-          const userDetails: UserDetailsType = {
-            email: user.email as string,
-            id: user._id as unknown as string,
-            is_phone_verified: user.is_phone_verified,
-            is_email_verified: user.is_email_verified,
-            created_at: user.created_at,
-            referred_by: user.referred_by
-          };
+          const userDetails: UserDetailsResponseType | undefined =
+            createUserDetails(user);
 
           if (isCorrectPassword) {
-            response = {
-              ...getResponse,
-              data: userDetails,
-              token
-            };
+            if (userDetails) {
+              response = {
+                ...getResponse,
+                data: userDetails,
+                token
+              };
+            } else {
+              //create log error
+            }
           } else {
             response = {
               ...unauthorizedResponse,
-              message: "Incorrect password"
+              message: "Incorrect password",
+              error: {
+                password: "Incorrect password detected!"
+              }
             };
           }
         }
@@ -104,11 +110,11 @@ export const loginController: ControllerType = async (req, res) => {
     }
     res.status(response.status).json(response);
   },
-  signUpController: ControllerType = (req, res) => {
+  signUpController: ControllerType = async (req, res) => {
     let response = {
       ...internalServerResponse
     };
-    const body = req.body;
+    const body: RegisterBody = req.body;
     const errors = validateValues(body, {
       name: true,
       email: {
@@ -150,10 +156,99 @@ export const loginController: ControllerType = async (req, res) => {
         error: errors
       };
     } else {
-      const {} = body;
+      const {
+        email,
+        name,
+        dob,
+        bio,
+        password: sentPassword,
+        mobile_number
+      } = body;
+      const password = await bcrypt.hash(createPassword(sentPassword), 10);
+      try {
+        const user = await UserSchema.findOne({
+          email
+        });
+        if (!user) {
+          const newUser = await UserSchema.create({
+            email,
+            name,
+            dob,
+            bio,
+            password,
+            mobile_number
+          });
+
+          if (newUser) {
+            const token = await generateToken({
+              userId: newUser._id as unknown as string,
+              userAgent: req.headers["user-agent"] as string,
+              verificationType: verificationTypes.signup
+            });
+            const userDetails: UserDetailsResponseType | undefined =
+              createUserDetails(newUser);
+
+            if (userDetails) {
+              response = {
+                ...getResponse,
+                data: userDetails,
+                token
+              };
+            } else {
+              //create log error
+            }
+          }
+        } else {
+          response = {
+            ...badRequestResponse,
+            message: "Email already exist. Please login instead",
+            error: {
+              email: "Email already exist in our database. Please login instead"
+            }
+          };
+        }
+      } catch (err) {
+        console.log(err);
+      }
     }
     res.status(response.status).json(response);
   },
-  forgetPasswordController: ControllerType = (req, res) => {
-    res.send("this is the login");
+  forgetPasswordController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+    const body: ForgotPasswordBody = req.body;
+    const errors = validateValues(body, {
+      email: {
+        required: true,
+        regex: {
+          value: emailRegExp,
+          message: "Please provide a valid email address"
+        }
+      }
+    });
+    if (errors) {
+      response = {
+        ...badRequestResponse,
+        error: errors
+      };
+    } else {
+      const { email } = body;
+      try {
+        const user = await UserSchema.findOne({
+          email
+        });
+
+        if (!user) {
+          response = {
+            ...notFoundResponse,
+            message: "User not found"
+          };
+        } else {
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    res.status(response.status).json(response);
   };

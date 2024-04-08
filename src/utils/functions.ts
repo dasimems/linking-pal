@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 // import { jwtAlgo } from "./variable";
 import { OTPTokenType, TokenType } from "./types";
+import { Document, Types } from "mongoose";
+import { IUser } from "../models/UserSchema";
+import { UserDetailsResponseType } from "../controllers";
 
 dotenv.config();
 const env = process.env;
@@ -186,6 +189,29 @@ export const validateValues: <T>(
   }
 
   return error;
+};
+
+export const createUserDetails = (
+  user:
+    | (IUser & {
+        _id: Types.ObjectId;
+      })
+    | null
+): UserDetailsResponseType | undefined => {
+  if (user) {
+    return {
+      email: user.email as string,
+      id: user._id as unknown as string,
+      is_phone_verified: user.is_phone_verified,
+      is_email_verified: user.is_email_verified,
+      created_at: user.created_at,
+      name: user.name,
+      bio: user.bio,
+      dob: user.dob,
+      mood: user.mood,
+      mobile_number: user.mobile_number
+    };
+  }
 };
 
 export const cacheOTP = (otp: number, email: string) => {
