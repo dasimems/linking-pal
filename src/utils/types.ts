@@ -18,14 +18,18 @@ export interface ResponseType {
 
 export interface UserDetailsType {
   email: string;
-  mood: string;
+  mood: string[];
   name: string;
   bio: string;
   dob: Date;
   mobile_number: number;
   is_phone_verified: boolean;
   is_email_verified: boolean;
+  video: string;
   created_at: Date;
+  updated_at: Date;
+  is_verified: boolean;
+  has_subscribed: boolean;
 }
 
 export interface TokenType {

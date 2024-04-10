@@ -71,9 +71,7 @@ export const validateValues: <T>(
           any;
   }
 ) => {
-  errors: {
-    [name: string]: string;
-  };
+  [name: string]: string;
 } | null = (data, validation) => {
   let error: { [name: string]: string } | null = null;
 
@@ -204,7 +202,11 @@ export const createUserDetails = (
       id: user._id as unknown as string,
       is_phone_verified: user.is_phone_verified,
       is_email_verified: user.is_email_verified,
+      is_verified: user.is_verified,
+      has_subscribed: user.has_subscribed,
       created_at: user.created_at,
+      updated_at: user.updated_at,
+      video: user.video,
       name: user.name,
       bio: user.bio,
       dob: user.dob,

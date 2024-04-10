@@ -17,6 +17,15 @@ export interface RegisterBody {
   bio: string;
   password: string;
 }
+export interface UpdateProfileBody extends AUthorizedBody {
+  name?: string;
+  dob?: Date;
+  bio?: string;
+}
+
+export interface AUthorizedBody {
+  userId: string;
+}
 
 export interface UserDetailsResponseType extends UserDetailsType {
   id: string;

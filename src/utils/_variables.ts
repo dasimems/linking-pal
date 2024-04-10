@@ -26,8 +26,9 @@ export const v1 = "/v1",
   jwtAlgo: Algorithm = "RS512",
   verificationTypes = {
     forgotPassword: "forgot-password",
-    signup: "signup",
-    updateEmail: "update-email"
+    phone: "phone",
+    updateEmail: "update-email",
+    email: "email"
   },
   userTypes = {
     driver: "driver",

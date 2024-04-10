@@ -73,7 +73,7 @@ export const loginController: ControllerType = async (req, res) => {
             token = await generateToken({
               userId: user._id as unknown as string,
               userAgent: req.headers["user-agent"] as string,
-              verificationType: verificationTypes.signup
+              verificationType: verificationTypes.phone
             });
           } else {
             token = await generateToken({
@@ -183,7 +183,7 @@ export const loginController: ControllerType = async (req, res) => {
             const token = await generateToken({
               userId: newUser._id as unknown as string,
               userAgent: req.headers["user-agent"] as string,
-              verificationType: verificationTypes.signup
+              verificationType: verificationTypes.phone
             });
             const userDetails: UserDetailsResponseType | undefined =
               createUserDetails(newUser);
@@ -245,6 +245,19 @@ export const loginController: ControllerType = async (req, res) => {
             message: "User not found"
           };
         } else {
+          // send otp to email
+
+          const token = await generateToken({
+            userId: user._id as unknown as string,
+            userAgent: req.headers["user-agent"] as string,
+            verificationType: verificationTypes.forgotPassword
+          });
+
+          response = {
+            ...getResponse,
+            message: "A password reset OTP has been sent to your email.",
+            token
+          };
         }
       } catch (error) {
         console.log(error);

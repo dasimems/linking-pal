@@ -43,13 +43,29 @@ const User = new Schema<IUser>({
     type: Boolean,
     default: false
   },
+  has_subscribed: {
+    type: Boolean,
+    default: false
+  },
+  is_verified: {
+    type: Boolean,
+    default: false
+  },
   mood: {
+    type: [String],
+    default: null
+  },
+  video: {
     type: String,
     default: null
   },
   created_at: {
     type: Date,
-    default: Date.now
+    default: new Date()
+  },
+  updated_at: {
+    type: Date,
+    default: null
   },
   referred_by: {
     type: String,
