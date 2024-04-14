@@ -8,6 +8,15 @@ export interface ForgotPasswordBody {
   email: string;
   password: string;
 }
+export interface SendOTPBody {
+  email?: string;
+  mobile_number?: string;
+}
+export interface VerifyOTPBody {
+  otp: string;
+  userId: string;
+  verificationType: string;
+}
 
 export interface RegisterBody {
   name: string;

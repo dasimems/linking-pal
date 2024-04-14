@@ -10,6 +10,7 @@ import { verificationTypes } from "../utils/_variables";
 import {
   createPassword,
   createUserDetails,
+  generateOTP,
   generateToken,
   validateValues
 } from "../utils/functions";
@@ -69,18 +70,11 @@ export const loginController: ControllerType = async (req, res) => {
           );
 
           let token = null;
-          if (!user.is_phone_verified) {
-            token = await generateToken({
-              userId: user._id as unknown as string,
-              userAgent: req.headers["user-agent"] as string,
-              verificationType: verificationTypes.phone
-            });
-          } else {
-            token = await generateToken({
-              userId: user._id as unknown as string,
-              userAgent: req.headers["user-agent"] as string
-            });
-          }
+
+          token = await generateToken({
+            userId: user._id as unknown as string,
+            userAgent: req.headers["user-agent"] as string
+          });
           const userDetails: UserDetailsResponseType | undefined =
             createUserDetails(user);
 
@@ -166,10 +160,17 @@ export const loginController: ControllerType = async (req, res) => {
       } = body;
       const password = await bcrypt.hash(createPassword(sentPassword), 10);
       try {
-        const user = await UserSchema.findOne({
+        const userEmailPromise = UserSchema.findOne({
           email
         });
-        if (!user) {
+        const userMobilePromise = UserSchema.findOne({
+          mobile_number
+        });
+        const [userEmail, userMobile] = await Promise.all([
+          userEmailPromise,
+          userMobilePromise
+        ]);
+        if (!userEmail && !userMobile) {
           const newUser = await UserSchema.create({
             email,
             name,
@@ -182,9 +183,9 @@ export const loginController: ControllerType = async (req, res) => {
           if (newUser) {
             const token = await generateToken({
               userId: newUser._id as unknown as string,
-              userAgent: req.headers["user-agent"] as string,
-              verificationType: verificationTypes.phone
+              userAgent: req.headers["user-agent"] as string
             });
+            const otp = generateOTP();
             const userDetails: UserDetailsResponseType | undefined =
               createUserDetails(newUser);
 
@@ -192,7 +193,8 @@ export const loginController: ControllerType = async (req, res) => {
               response = {
                 ...getResponse,
                 data: userDetails,
-                token
+                token,
+                message: `Account created successfully. Your OTP is ${otp}`
               };
             } else {
               //create log error
@@ -201,11 +203,33 @@ export const loginController: ControllerType = async (req, res) => {
         } else {
           response = {
             ...badRequestResponse,
-            message: "Email already exist. Please login instead",
-            error: {
-              email: "Email already exist in our database. Please login instead"
-            }
+            message: `${
+              userEmail && userMobile
+                ? "Email and mobile number"
+                : userEmail
+                ? "Email"
+                : "Mobile Number"
+            } already exist. Please login instead`
           };
+
+          if (userEmail) {
+            response = {
+              ...response,
+              error: {
+                ...response?.error,
+                email: "Email already exist in our database"
+              }
+            };
+          }
+          if (userMobile) {
+            response = {
+              ...response,
+              error: {
+                ...response?.error,
+                mobile_number: "Mobile number already exist in our database"
+              }
+            };
+          }
         }
       } catch (err) {
         console.log(err);

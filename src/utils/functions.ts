@@ -5,8 +5,11 @@ import nodemailer from "nodemailer";
 // import { jwtAlgo } from "./variable";
 import { OTPTokenType, TokenType } from "./types";
 import { Document, Types } from "mongoose";
-import { IUser } from "../models/UserSchema";
-import { UserDetailsResponseType } from "../controllers";
+import UserSchema, { IUser } from "../models/UserSchema";
+import { AUthorizedBody, UserDetailsResponseType } from "../controllers";
+import { Request, Response } from "express";
+import { forbiddenResponse, unauthorizedResponse } from "./responses";
+import { expiringTimes, otpKeys } from "./_variables";
 
 dotenv.config();
 const env = process.env;
@@ -92,6 +95,16 @@ export const validateValues: <T>(
       const validationValue = validation[key];
 
       if (validationValue) {
+        console.log(
+          validationValue.maxLength &&
+            !isNaN(Number(validationValue.maxLength)) &&
+            value.toString().length < validationValue.maxLength
+        );
+        console.log(
+          validationValue?.maxLength?.value &&
+            !isNaN(Number(validationValue?.maxLength?.value)) &&
+            value.toString().length < validationValue?.maxLength?.value
+        );
         if (
           typeof validationValue !== "object" &&
           (!value || value.length < 1)
@@ -113,10 +126,10 @@ export const validateValues: <T>(
           } else if (
             !isNaN(Number(value)) &&
             ((validationValue.min &&
-              Number(validationValue.min) &&
+              !isNaN(Number(validationValue.min)) &&
               Number(value) < validationValue.min) ||
               (validationValue?.min?.value &&
-                Number(validationValue?.min?.value) &&
+                !isNaN(Number(validationValue?.min?.value)) &&
                 Number(value) < validationValue.min.value))
           ) {
             error = {
@@ -128,10 +141,10 @@ export const validateValues: <T>(
           } else if (
             !isNaN(Number(value)) &&
             ((validationValue.max &&
-              Number(validationValue.max) &&
+              !isNaN(Number(validationValue.max)) &&
               Number(value) > validationValue.max) ||
               (validationValue?.max?.value &&
-                Number(validationValue?.max?.value) &&
+                !isNaN(Number(validationValue?.max?.value)) &&
                 Number(value) > validationValue?.max?.value))
           ) {
             error = {
@@ -142,11 +155,11 @@ export const validateValues: <T>(
             };
           } else if (
             (validationValue.minLength &&
-              Number(validationValue.minLength) &&
-              value.length < validationValue.minLength) ||
+              !isNaN(Number(validationValue.minLength)) &&
+              value.toString().length < validationValue.minLength) ||
             (validationValue?.minLength?.value &&
-              Number(validationValue?.minLength?.value) &&
-              value.length < validationValue?.minLength?.value)
+              !isNaN(Number(validationValue?.minLength?.value)) &&
+              value.toString().length < validationValue?.minLength?.value)
           ) {
             error = {
               ...error,
@@ -156,11 +169,11 @@ export const validateValues: <T>(
             };
           } else if (
             (validationValue.maxLength &&
-              Number(validationValue.maxLength) &&
-              value.length < validationValue.maxLength) ||
+              !isNaN(Number(validationValue.maxLength)) &&
+              value.toString().length > validationValue.maxLength) ||
             (validationValue?.maxLength?.value &&
-              Number(validationValue?.maxLength?.value) &&
-              value.length < validationValue?.maxLength?.value)
+              !isNaN(Number(validationValue?.maxLength?.value)) &&
+              value.toString().length > validationValue?.maxLength?.value)
           ) {
             error = {
               ...error,
@@ -187,6 +200,50 @@ export const validateValues: <T>(
   }
 
   return error;
+};
+
+export const validateUser = async (
+  req: Request,
+  res: Response,
+  omitVerification?: boolean
+) => {
+  let response = {
+    ...unauthorizedResponse
+  };
+  const { userId } = req.body as AUthorizedBody;
+
+  try {
+    const user = await UserSchema.findById(userId);
+
+    if (user) {
+      if (!user.is_phone_verified || !user.is_email_verified) {
+        response = {
+          ...forbiddenResponse,
+          message: `Please verify your ${
+            !user.is_phone_verified && !user.is_email_verified
+              ? "email address and mobile number"
+              : !user.is_email_verified
+              ? "email address"
+              : "mobile number"
+          }`
+        };
+        if (omitVerification) {
+          return user;
+        }
+      } else {
+        return user;
+      }
+    } else {
+      res.status(response.status).json(response);
+    }
+  } catch (error) {
+    // create error log
+  }
+  return;
+};
+
+export const generateCacheKey = (extension: string, id: string) => {
+  return `${extension}-${id}`;
 };
 
 export const createUserDetails = (
@@ -216,17 +273,45 @@ export const createUserDetails = (
   }
 };
 
-export const cacheOTP = (otp: number, email: string) => {
-  return cache.set(email, { otp }, 180000);
+export const cacheEmailOTP = (otp: string, id: string) => {
+  return cache.set(
+    generateCacheKey(otpKeys.email, id),
+    { otp },
+    expiringTimes.otp
+  );
 };
-export const fetchCacheOTP = (email: string) => {
-  return cache.get(email);
+export const fetchCachedEmailOTP = (id: string) => {
+  return cache.get(generateCacheKey(otpKeys.email, id));
 };
-export const cacheToken = (token: string, id: string) => {
-  return cache.set(id, { token }, 300000);
+export const cacheMobileNumberOTP = (otp: string, id: string) => {
+  return cache.set(
+    generateCacheKey(otpKeys.mobileNumber, id),
+    { otp },
+    expiringTimes.otp
+  );
 };
-export const fetchCacheToken = (id: string) => {
-  return cache.get(id);
+export const fetchCachedMobileNumberOTP = (id: string) => {
+  return cache.get(generateCacheKey(otpKeys.mobileNumber, id));
+};
+export const cacheForgotPasswordOTP = (otp: string, id: string) => {
+  return cache.set(
+    generateCacheKey(otpKeys.forgotPassword, id),
+    { otp },
+    expiringTimes.otp
+  );
+};
+export const fetchCachedForgotPasswordOTP = (id: string) => {
+  return cache.get(generateCacheKey(otpKeys.forgotPassword, id));
+};
+export const cacheForgotPasswordToken = (token: string, id: string) => {
+  return cache.set(
+    generateCacheKey(otpKeys.forgotPasswordToken, id),
+    { token },
+    expiringTimes.otp * 2
+  );
+};
+export const fetchCachedForgotPasswordToken = (id: string) => {
+  return cache.get(generateCacheKey(otpKeys.forgotPasswordToken, id));
 };
 export const cacheEmail = (email: string, username: string) => {
   return nonExpiringCache.set(username, { email });
@@ -261,7 +346,7 @@ export const reverseToken = async (token: string) => {
   }
 };
 
-export const generateOTP = (length: number = 4) => {
+export const generateOTP = (length: number = 4): string => {
   let otp = "";
 
   for (var i = 0; i < length; i++) {
@@ -269,7 +354,9 @@ export const generateOTP = (length: number = 4) => {
     otp = otp + Math.floor(randomNumber);
   }
 
-  return parseInt(otp);
+  console.log(parseInt("0124", 10));
+
+  return otp;
 };
 
 export const sendMail = ({

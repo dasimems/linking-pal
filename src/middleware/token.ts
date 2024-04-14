@@ -20,15 +20,7 @@ export const verifyUserToken: MiddleWareType = async (req, res, next) => {
       const decodedToken = (await reverseToken(sentToken)) as TokenType &
         OTPTokenType;
       const userId = decodedToken?.userId || "";
-      const verificationType = decodedToken?.verificationType || "";
-      if (verificationType === verificationTypes.phone) {
-        return res
-          .status(tokenError.status)
-          .json({
-            ...tokenError,
-            message: "Please verify your mobile number to continue"
-          });
-      }
+
       if (userId) {
         req.body.userId = userId;
         next();

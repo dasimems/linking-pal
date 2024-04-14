@@ -33,4 +33,13 @@ export const v1 = "/v1",
   userTypes = {
     driver: "driver",
     passenger: "passenger"
+  },
+  otpKeys = {
+    email: "email",
+    mobileNumber: "mobile-number",
+    forgotPassword: "forgot-password",
+    forgotPasswordToken: "forgot-password-token"
+  },
+  expiringTimes = {
+    otp: 300000
   };

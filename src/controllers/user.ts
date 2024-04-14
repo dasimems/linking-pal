@@ -6,7 +6,11 @@ import {
   getResponse,
   unauthorizedResponse
 } from "../utils/responses";
-import { createUserDetails, validateValues } from "../utils/functions";
+import {
+  createUserDetails,
+  validateUser,
+  validateValues
+} from "../utils/functions";
 import { dateRegExp } from "../utils/regex";
 import { badRequestResponse, processedResponse } from "../utils/responses";
 
@@ -14,10 +18,9 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
       ...internalServerResponse
     };
-    const { userId } = req.body as AUthorizedBody;
 
     try {
-      const user = await UserSchema.findById(userId);
+      const user = await validateUser(req, res, true);
       if (user) {
         const data = createUserDetails(user);
 
@@ -26,9 +29,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
           data
         };
       } else {
-        response = {
-          ...unauthorizedResponse
-        };
+        return;
       }
     } catch (error) {
       // create log error
@@ -100,7 +101,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
           updated_at: new Date()
         };
         try {
-          const user = await UserSchema.findById(userId);
+          const user = await validateUser(req, res, true);
           if (user) {
             console.log(expectedBody);
             const newDetails = await UserSchema.findByIdAndUpdate(
@@ -121,9 +122,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               data: userDetails
             };
           } else {
-            response = {
-              ...unauthorizedResponse
-            };
+            return;
           }
         } catch (error) {}
       }
@@ -136,7 +135,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     };
     const { userId } = req.body as AUthorizedBody;
     try {
-      const user = await UserSchema.findById(userId);
+      const user = await validateUser(req, res);
 
       if (user) {
         const _ = await UserSchema.findByIdAndDelete(userId);
@@ -145,9 +144,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
           message: "User already deleted"
         };
       } else {
-        response = {
-          ...unauthorizedResponse
-        };
+        return;
       }
     } catch (error) {}
     res.status(response.status).json(response);

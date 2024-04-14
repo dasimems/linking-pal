@@ -38,6 +38,10 @@ export interface TokenType {
   userAgent?: string;
 }
 
+export interface CachedOTPType {
+  otp: string;
+}
+
 export interface OTPTokenType extends TokenType {
   verificationType?: string;
 }
