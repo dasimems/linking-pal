@@ -12,6 +12,9 @@ export interface SendOTPBody {
   email?: string;
   mobile_number?: string;
 }
+export interface UpdateMoodBody {
+  mood?: string[];
+}
 export interface VerifyOTPBody {
   otp: string;
   userId: string;

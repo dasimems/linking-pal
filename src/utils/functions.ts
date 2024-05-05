@@ -229,12 +229,16 @@ export const validateUser = async (
         };
         if (omitVerification) {
           return user;
+        } else {
+          res.status(response.status).json(response);
+          return;
         }
       } else {
         return user;
       }
     } else {
       res.status(response.status).json(response);
+      return;
     }
   } catch (error) {
     // create error log

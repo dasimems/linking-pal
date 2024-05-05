@@ -5,6 +5,7 @@ type UserDocType = UserDetailsType & Document;
 export interface IUser extends UserDocType {
   password: string;
   referred_by: string | null;
+  mood_last_updated: Date;
 }
 
 const Schema = mongoose.Schema;
@@ -63,6 +64,10 @@ const User = new Schema<IUser>({
   created_at: {
     type: Date,
     default: new Date()
+  },
+  mood_last_updated: {
+    type: Date,
+    default: null
   },
   updated_at: {
     type: Date,

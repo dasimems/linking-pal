@@ -1,10 +1,11 @@
-import { AUthorizedBody, UpdateProfileBody } from ".";
+import { AUthorizedBody, UpdateMoodBody, UpdateProfileBody } from ".";
 import UserSchema from "../models/UserSchema";
-import { ControllerType } from "../utils/types";
+import { ControllerType, ResponseType } from "../utils/types";
 import {
   internalServerResponse,
   getResponse,
-  unauthorizedResponse
+  unauthorizedResponse,
+  forbiddenResponse
 } from "../utils/responses";
 import {
   createUserDetails,
@@ -13,6 +14,7 @@ import {
 } from "../utils/functions";
 import { dateRegExp } from "../utils/regex";
 import { badRequestResponse, processedResponse } from "../utils/responses";
+import { hour24Milliseconds } from "../utils/_variables";
 
 export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
@@ -121,7 +123,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               message: "Update successful",
               data: userDetails
             };
-          } else {
+
             return;
           }
         } catch (error) {}
@@ -149,8 +151,99 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     } catch (error) {}
     res.status(response.status).json(response);
   },
-  updateUserMoodController: ControllerType = (req, res) => {
-    res.send("this is to update user mood");
+  updateUserMoodController: ControllerType = async (req, res) => {
+    const body = req.body as UpdateMoodBody;
+    const { mood } = body;
+    const user = await validateUser(req, res);
+    let response: ResponseType = {
+      ...internalServerResponse
+    };
+
+    if (!mood || !Array.isArray(mood)) {
+      response = {
+        ...badRequestResponse,
+        message: mood
+          ? "Invalid mood type detected! Mood must be an array"
+          : "Please provide your mood"
+      };
+    } else {
+      if (user) {
+        let errors = null;
+
+        if (mood.length < 1) {
+          if (!errors) {
+            errors = {};
+          }
+          errors = {
+            ...errors,
+            mood: "Please provide at least one mood"
+          };
+        }
+
+        if (mood.length > 1 && !user.has_subscribed) {
+          if (!errors) {
+            errors = {};
+          }
+          errors = {
+            ...errors,
+            mood: "You can't select add than one mood. Please subscribe to add more than one mood"
+          };
+        }
+
+        if (errors) {
+          response = {
+            ...badRequestResponse,
+            error: errors
+          };
+        }
+
+        if (!errors) {
+          const lastUpdated = new Date(
+            user.mood_last_updated || Date.now()
+          ).getTime();
+          const presentDate = new Date().getTime();
+          if (
+            user.mood_last_updated &&
+            !user.has_subscribed &&
+            presentDate - lastUpdated < hour24Milliseconds
+          ) {
+            response = {
+              ...forbiddenResponse,
+              message:
+                "You can only update your mood once in 24 hours. Subscribe to remove the restriction"
+            };
+          }
+          if (
+            !user.mood_last_updated ||
+            user.has_subscribed ||
+            (user.mood_last_updated &&
+              !user.has_subscribed &&
+              presentDate - lastUpdated >= hour24Milliseconds)
+          ) {
+            const newDetails = await UserSchema.findByIdAndUpdate(
+              user.id,
+              {
+                mood,
+                mood_last_updated: new Date()
+              },
+              { new: true }
+            );
+
+            const userDetails = createUserDetails(newDetails);
+
+            response = {
+              ...getResponse,
+              message: "Mood updated successful",
+              data: userDetails
+            };
+          }
+        }
+      } else {
+        return;
+      }
+    }
+
+    res.status(response.status).json(response);
   },
   updateUserLocationController: ControllerType = (req, res) => {
     res.send("this is to update user location");

@@ -42,4 +42,5 @@ export const v1 = "/v1",
   },
   expiringTimes = {
     otp: 300000
-  };
+  },
+  hour24Milliseconds = 86400000;
