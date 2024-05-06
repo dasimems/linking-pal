@@ -1,10 +1,14 @@
-import { AUthorizedBody, UpdateMoodBody, UpdateProfileBody } from ".";
+import {
+  AUthorizedBody,
+  UpdateLocationBody,
+  UpdateMoodBody,
+  UpdateProfileBody
+} from ".";
 import UserSchema from "../models/UserSchema";
 import { ControllerType, ResponseType } from "../utils/types";
 import {
   internalServerResponse,
   getResponse,
-  unauthorizedResponse,
   forbiddenResponse
 } from "../utils/responses";
 import {
@@ -12,7 +16,7 @@ import {
   validateUser,
   validateValues
 } from "../utils/functions";
-import { dateRegExp } from "../utils/regex";
+import { coordinateRegExp, dateRegExp } from "../utils/regex";
 import { badRequestResponse, processedResponse } from "../utils/responses";
 import { hour24Milliseconds } from "../utils/_variables";
 
@@ -220,22 +224,24 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               !user.has_subscribed &&
               presentDate - lastUpdated >= hour24Milliseconds)
           ) {
-            const newDetails = await UserSchema.findByIdAndUpdate(
-              user.id,
-              {
-                mood,
-                mood_last_updated: new Date()
-              },
-              { new: true }
-            );
+            try {
+              const newDetails = await UserSchema.findByIdAndUpdate(
+                user.id,
+                {
+                  mood,
+                  mood_last_updated: new Date()
+                },
+                { new: true }
+              );
 
-            const userDetails = createUserDetails(newDetails);
+              const userDetails = createUserDetails(newDetails);
 
-            response = {
-              ...getResponse,
-              message: "Mood updated successful",
-              data: userDetails
-            };
+              response = {
+                ...getResponse,
+                message: "Mood updated successful",
+                data: userDetails
+              };
+            } catch (error) {}
           }
         }
       } else {
@@ -245,8 +251,66 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
 
     res.status(response.status).json(response);
   },
-  updateUserLocationController: ControllerType = (req, res) => {
-    res.send("this is to update user location");
+  updateUserLocationController: ControllerType = async (req, res) => {
+    const body = req.body as UpdateLocationBody;
+    const { latitude, longitude } = body;
+    const user = await validateUser(req, res);
+    let response: ResponseType = {
+      ...internalServerResponse
+    };
+
+    const errors = validateValues(body, {
+      latitude: {
+        required: {
+          value: true,
+          message: "Please provide your latitude"
+        },
+        regex: {
+          value: coordinateRegExp,
+          message: "Please input a valid latitude"
+        }
+      },
+      longitude: {
+        required: {
+          value: true,
+          message: "Please provide your longitude"
+        },
+        regex: {
+          value: coordinateRegExp,
+          message: "Please input a valid longitude"
+        }
+      }
+    });
+
+    if (errors) {
+      response = {
+        ...badRequestResponse,
+        error: errors
+      };
+    }
+
+    if (!errors) {
+      if (user) {
+        try {
+          const _ = await UserSchema.findByIdAndUpdate(
+            user.id,
+            {
+              longitude,
+              latitude
+            },
+            { new: true }
+          );
+
+          response = {
+            ...getResponse,
+            message: "Location updated successful"
+          };
+        } catch (error) {}
+      } else {
+        return;
+      }
+    }
+    res.status(response.status).json(response);
   },
   updateUserVideoController: ControllerType = (req, res) => {
     res.send("this is to update user video");

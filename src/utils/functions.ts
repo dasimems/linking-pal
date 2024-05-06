@@ -8,7 +8,11 @@ import { Document, Types } from "mongoose";
 import UserSchema, { IUser } from "../models/UserSchema";
 import { AUthorizedBody, UserDetailsResponseType } from "../controllers";
 import { Request, Response } from "express";
-import { forbiddenResponse, unauthorizedResponse } from "./responses";
+import {
+  forbiddenResponse,
+  internalServerResponse,
+  unauthorizedResponse
+} from "./responses";
 import { expiringTimes, otpKeys } from "./_variables";
 
 dotenv.config();
@@ -212,6 +216,10 @@ export const validateUser = async (
   };
   const { userId } = req.body as AUthorizedBody;
 
+  if (!userId) {
+    res.status(response.status).json(response);
+    return;
+  }
   try {
     const user = await UserSchema.findById(userId);
 
@@ -241,6 +249,11 @@ export const validateUser = async (
       return;
     }
   } catch (error) {
+    response = {
+      ...internalServerResponse
+    };
+    res.status(response.status).json(response);
+    return;
     // create error log
   }
   return;

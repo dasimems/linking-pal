@@ -13,7 +13,11 @@ export interface SendOTPBody {
   mobile_number?: string;
 }
 export interface UpdateMoodBody {
-  mood?: string[];
+  mood: string[];
+}
+export interface UpdateLocationBody {
+  latitude: number;
+  longitude: number;
 }
 export interface VerifyOTPBody {
   otp: string;

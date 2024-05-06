@@ -3,6 +3,7 @@ import {
   deleteUserDetailsController,
   getUserDetailsController,
   updateUserDetailsController,
+  updateUserLocationController,
   updateUserMoodController,
   updateUserVideoController
 } from "../../controllers/user";
@@ -16,7 +17,7 @@ userRoute
   .delete(deleteUserDetailsController);
 
 userRoute.route(subRoutes.mood).post(updateUserMoodController);
-userRoute.route(subRoutes.location).post(updateUserMoodController);
+userRoute.route(subRoutes.location).post(updateUserLocationController);
 userRoute.route(subRoutes.video).post(updateUserVideoController);
 
 export default userRoute;

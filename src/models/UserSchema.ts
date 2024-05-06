@@ -6,6 +6,8 @@ export interface IUser extends UserDocType {
   password: string;
   referred_by: string | null;
   mood_last_updated: Date;
+  longitude: number;
+  latitude: number;
 }
 
 const Schema = mongoose.Schema;
@@ -19,6 +21,14 @@ const User = new Schema<IUser>({
     type: Number,
     required: true,
     unique: true
+  },
+  longitude: {
+    type: Number,
+    default: null
+  },
+  latitude: {
+    type: Number,
+    default: null
   },
   email: {
     type: String,
