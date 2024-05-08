@@ -71,6 +71,10 @@ const User = new Schema<IUser>({
     type: String,
     default: null
   },
+  avatar: {
+    type: String,
+    default: null
+  },
   created_at: {
     type: Date,
     default: new Date()

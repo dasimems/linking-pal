@@ -272,6 +272,7 @@ export const createUserDetails = (
 ): UserDetailsResponseType | undefined => {
   if (user) {
     return {
+      avatar: user.avatar,
       email: user.email as string,
       id: user._id as unknown as string,
       is_phone_verified: user.is_phone_verified,

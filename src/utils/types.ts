@@ -30,6 +30,7 @@ export interface UserDetailsType {
   updated_at: Date;
   is_verified: boolean;
   has_subscribed: boolean;
+  avatar: string;
 }
 
 export interface TokenType {

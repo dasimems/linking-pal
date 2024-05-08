@@ -411,4 +411,9 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     }
 
     // res.status(response.status).json(response);
+  },
+  updateUserAvatarController: ControllerType = async () => {
+    let response = {
+      ...internalServerResponse
+    };
   };

@@ -2,6 +2,7 @@ import express from "express";
 import {
   deleteUserDetailsController,
   getUserDetailsController,
+  updateUserAvatarController,
   updateUserDetailsController,
   updateUserLocationController,
   updateUserMoodController,
@@ -19,5 +20,6 @@ userRoute
 userRoute.route(subRoutes.mood).post(updateUserMoodController);
 userRoute.route(subRoutes.location).post(updateUserLocationController);
 userRoute.route(subRoutes.video).post(updateUserVideoController);
+userRoute.route(subRoutes.image).post(updateUserAvatarController);
 
 export default userRoute;
