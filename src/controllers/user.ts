@@ -19,6 +19,7 @@ import {
 import { coordinateRegExp, dateRegExp } from "../utils/regex";
 import { badRequestResponse, processedResponse } from "../utils/responses";
 import { hour24Milliseconds } from "../utils/_variables";
+import { videUpload } from "../middleware/multler";
 
 export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
@@ -312,6 +313,28 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     }
     res.status(response.status).json(response);
   },
-  updateUserVideoController: ControllerType = (req, res) => {
-    res.send("this is to update user video");
+  updateUserVideoController: ControllerType = async (req, res) => {
+    const user = await validateUser(req, res);
+    let response: ResponseType = {
+      ...internalServerResponse
+    };
+    const upload = videUpload().single("video");
+    if (user) {
+      upload(req, res, (err) => {
+        if (err) {
+          response = {
+            ...badRequestResponse,
+            message: typeof err === "string" ? err : err.toString()
+          };
+        }
+
+        if (!err && req.file) {
+          const { path } = req.file;
+        }
+      });
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
   };
