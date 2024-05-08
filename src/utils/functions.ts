@@ -414,3 +414,7 @@ export const sendMail = ({
     });
   });
 };
+
+export const convertMinToSecs = (min: number = 1) => {
+  return min * 60;
+};

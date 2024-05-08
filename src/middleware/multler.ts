@@ -5,7 +5,6 @@ const videoStorage = multer.diskStorage({
   filename: (req, file, cb) => {
     const fileExt = file.originalname.split(".").pop();
     const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;
-    console.log(file.originalname, fileExt, filename);
     cb(null, filename);
   }
 });

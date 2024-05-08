@@ -12,14 +12,19 @@ import {
   forbiddenResponse
 } from "../utils/responses";
 import {
+  convertMinToSecs,
   createUserDetails,
   validateUser,
   validateValues
 } from "../utils/functions";
+import fs from "fs";
 import { coordinateRegExp, dateRegExp } from "../utils/regex";
 import { badRequestResponse, processedResponse } from "../utils/responses";
 import { hour24Milliseconds } from "../utils/_variables";
 import { videUpload } from "../middleware/multler";
+import multer from "multer";
+import getVideoDurationInSeconds from "get-video-duration";
+import cloudinary from "../utils/cloudinary";
 
 export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
@@ -320,21 +325,90 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     };
     const upload = videUpload().single("video");
     if (user) {
-      upload(req, res, (err) => {
-        if (err) {
+      upload(req, res, async (err) => {
+        if (err instanceof multer.MulterError) {
           response = {
             ...badRequestResponse,
-            message: typeof err === "string" ? err : err.toString()
+            message:
+              err.message || "Unidentified error occurred while uploading"
           };
+          res.status(response.status).json(response);
+          return;
+        } else if (err) {
+          response = {
+            ...badRequestResponse,
+            message: err?.message || "Unknown error occurred while uploading!"
+          };
+          res.status(response.status).json(response);
+          return;
         }
 
         if (!err && req.file) {
           const { path } = req.file;
+          console.log("path", path);
+          try {
+            const duration = await getVideoDurationInSeconds(path);
+
+            if (duration > convertMinToSecs(1.5)) {
+              response = {
+                ...badRequestResponse,
+                message: "Please upload video not more than 90 secs"
+              };
+
+              res.status(response.status).json(response);
+              return;
+            } else {
+              const fName = req.file.originalname.split(".")[0];
+              cloudinary.uploader.upload(
+                path,
+                {
+                  resource_type: "video",
+                  public_id: `VideoUploads/${fName}`
+                },
+                async (err, video) => {
+                  fs.unlinkSync(path);
+                  if (err) {
+                    response = {
+                      ...internalServerResponse,
+                      message: err?.message
+                    };
+                    return res.status(response.status).json(response);
+                  }
+
+                  if (!err) {
+                    const newDetails = await UserSchema.findByIdAndUpdate(
+                      user.id,
+                      {
+                        video: video?.secure_url,
+                        updated_at: new Date()
+                      },
+                      { new: true }
+                    );
+                    const userDetails = createUserDetails(newDetails);
+
+                    response = {
+                      ...getResponse,
+                      message: "Video Updated successfully",
+                      data: userDetails
+                    };
+
+                    return res.status(response.status).json(response);
+                  }
+                }
+              );
+            }
+            return;
+          } catch (error) {
+            response.message =
+              "Internal server error! Unable to determine video duration";
+            res.status(response.status).json(response);
+            return;
+          }
         }
       });
     } else {
       return;
     }
 
-    res.status(response.status).json(response);
+    // res.status(response.status).json(response);
   };
