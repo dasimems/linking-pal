@@ -14,14 +14,16 @@ import {
 import {
   convertMinToSecs,
   createUserDetails,
+  getCloudinaryPublicId,
+  getFileRoute,
   validateUser,
   validateValues
 } from "../utils/functions";
 import fs from "fs";
 import { coordinateRegExp, dateRegExp } from "../utils/regex";
 import { badRequestResponse, processedResponse } from "../utils/responses";
-import { hour24Milliseconds } from "../utils/_variables";
-import { videUpload } from "../middleware/multler";
+import { cloudinaryFolderName, hour24Milliseconds } from "../utils/_variables";
+import { imageUpload, videUpload } from "../middleware/multler";
 import multer from "multer";
 import getVideoDurationInSeconds from "get-video-duration";
 import cloudinary from "../utils/cloudinary";
@@ -343,6 +345,15 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
           return;
         }
 
+        if (!req.file && !err) {
+          response = {
+            ...badRequestResponse,
+            message: "Please upload a video"
+          };
+
+          return res.status(response.status).json(response);
+        }
+
         if (!err && req.file) {
           const { path } = req.file;
           console.log("path", path);
@@ -355,15 +366,38 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
                 message: "Please upload video not more than 90 secs"
               };
 
+              fs.unlinkSync(path);
               res.status(response.status).json(response);
               return;
             } else {
               const fName = req.file.originalname.split(".")[0];
+              const userFileName = getFileRoute(user.id, fName);
+              if (user.video) {
+                const splittedUserVideo = user.video.split("/");
+                const videoFileName =
+                  splittedUserVideo[splittedUserVideo.length - 1];
+
+                const saveFileRoute = getFileRoute(user.id, videoFileName);
+                const publicId = getCloudinaryPublicId(
+                  saveFileRoute,
+                  "video"
+                ).split(".")[0];
+
+                if (publicId) {
+                  console.log("previousId", publicId);
+                  const deleting = await cloudinary.uploader.destroy(publicId, {
+                    resource_type: "video",
+                    invalidate: true
+                  });
+                  console.log(deleting);
+                }
+              }
+              console.log("fileName", userFileName);
               cloudinary.uploader.upload(
                 path,
                 {
                   resource_type: "video",
-                  public_id: `VideoUploads/${fName}`
+                  public_id: getCloudinaryPublicId(userFileName, "video")
                 },
                 async (err, video) => {
                   fs.unlinkSync(path);
@@ -376,6 +410,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
                   }
 
                   if (!err) {
+                    console.log(video);
                     const newDetails = await UserSchema.findByIdAndUpdate(
                       user.id,
                       {
@@ -412,8 +447,42 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
 
     // res.status(response.status).json(response);
   },
-  updateUserAvatarController: ControllerType = async () => {
+  updateUserAvatarController: ControllerType = async (req, res) => {
     let response = {
       ...internalServerResponse
     };
+    const user = await validateUser(req, res);
+    const upload = imageUpload().single("avatar");
+
+    if (user) {
+      upload(req, res, async (err) => {
+        if (err instanceof multer.MulterError) {
+          response = {
+            ...badRequestResponse,
+            message:
+              err.message || "Unidentified error occurred while uploading"
+          };
+          res.status(response.status).json(response);
+          return;
+        } else if (err) {
+          response = {
+            ...badRequestResponse,
+            message: err?.message || "Unknown error occurred while uploading!"
+          };
+          res.status(response.status).json(response);
+          return;
+        }
+
+        if (!req.file && !err) {
+          response = {
+            ...badRequestResponse,
+            message: "Please upload an image"
+          };
+
+          return res.status(response.status).json(response);
+        }
+      });
+    } else {
+      return;
+    }
   };

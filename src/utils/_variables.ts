@@ -23,6 +23,7 @@ export const v1 = "/v1",
     location: "/location",
     video: "/video"
   },
+  cloudinaryFolderName = { video: "video-upload", image: "image-upload" },
   jwtAlgo: Algorithm = "RS512",
   verificationTypes = {
     forgotPassword: "forgot-password",

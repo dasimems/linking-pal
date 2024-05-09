@@ -13,7 +13,7 @@ import {
   internalServerResponse,
   unauthorizedResponse
 } from "./responses";
-import { expiringTimes, otpKeys } from "./_variables";
+import { cloudinaryFolderName, expiringTimes, otpKeys } from "./_variables";
 
 dotenv.config();
 const env = process.env;
@@ -288,6 +288,35 @@ export const createUserDetails = (
       mood: user.mood,
       mobile_number: user.mobile_number
     };
+  }
+};
+
+export const getCloudinaryPublicId = (
+  fileName: string,
+  type: "video" | "image"
+) => {
+  let folderName = "";
+
+  switch (type) {
+    case "image":
+      folderName = cloudinaryFolderName.image;
+      break;
+    case "video":
+      folderName = cloudinaryFolderName.video;
+      break;
+
+    default:
+      break;
+  }
+
+  return type ? `${folderName}/${fileName}` : "";
+};
+
+export const getFileRoute = (userId: string, fileName: string) => {
+  if (userId && fileName) {
+    return `${userId}/${fileName}`;
+  } else {
+    return fileName || "";
   }
 };
 
