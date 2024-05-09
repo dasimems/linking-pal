@@ -481,6 +481,80 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
 
           return res.status(response.status).json(response);
         }
+
+        if (!err && req.file) {
+          const { path } = req.file;
+          try {
+            const fName = req.file.originalname.split(".")[0];
+            const userFileName = getFileRoute(user.id, fName);
+
+            if (user.avatar) {
+              const splittedUserVideo = user.avatar.split("/");
+              const imageFileName =
+                splittedUserVideo[splittedUserVideo.length - 1];
+
+              const saveFileRoute = getFileRoute(user.id, imageFileName);
+              const publicId = getCloudinaryPublicId(
+                saveFileRoute,
+                "image"
+              ).split(".")[0];
+
+              if (publicId) {
+                console.log("previousId", publicId);
+                const deleting = await cloudinary.uploader.destroy(publicId, {
+                  resource_type: "image",
+                  invalidate: true
+                });
+                console.log(deleting);
+              }
+            }
+
+            cloudinary.uploader.upload(
+              path,
+              {
+                resource_type: "image",
+                public_id: getCloudinaryPublicId(userFileName, "image")
+              },
+              async (err, image) => {
+                fs.unlinkSync(path);
+                if (err) {
+                  response = {
+                    ...internalServerResponse,
+                    message: err?.message
+                  };
+                  return res.status(response.status).json(response);
+                }
+
+                if (!err) {
+                  console.log(image);
+                  const newDetails = await UserSchema.findByIdAndUpdate(
+                    user.id,
+                    {
+                      avatar: image?.secure_url,
+                      updated_at: new Date()
+                    },
+                    { new: true }
+                  );
+                  const userDetails = createUserDetails(newDetails);
+
+                  response = {
+                    ...getResponse,
+                    message: "Profile picture updated successfully",
+                    data: userDetails
+                  };
+
+                  return res.status(response.status).json(response);
+                }
+              }
+            );
+
+            return;
+          } catch (error) {
+            response.message = "Internal server error! Unable to upload image";
+            res.status(response.status).json(response);
+            return;
+          }
+        }
       });
     } else {
       return;
