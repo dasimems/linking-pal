@@ -25,85 +25,27 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose = __importStar(require("mongoose"));
 const Schema = mongoose.Schema;
-const User = new Schema({
-    name: {
+const Post = new Schema({
+    text: {
         type: String,
         required: true
     },
-    mobile_number: {
-        type: Number,
-        required: true,
-        unique: true
-    },
-    longitude: {
-        type: Number,
-        default: null
-    },
-    latitude: {
-        type: Number,
-        default: null
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    dob: {
-        type: Date,
-        required: true
-    },
-    bio: {
-        type: String,
-        required: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    is_phone_verified: {
-        type: Boolean,
-        default: false
-    },
-    is_email_verified: {
-        type: Boolean,
-        default: false
-    },
-    has_subscribed: {
-        type: Boolean,
-        default: false
-    },
-    is_verified: {
-        type: Boolean,
-        default: false
-    },
-    mood: {
+    files: {
         type: [String],
-        default: null
-    },
-    video: {
-        type: String,
-        default: null
-    },
-    avatar: {
-        type: String,
-        default: null
+        required: true
     },
     created_at: {
         type: Date,
         default: new Date()
     },
-    mood_last_updated: {
-        type: Date,
-        default: null
+    created_by: {
+        type: "ObjectId",
+        required: true
     },
-    updated_at: {
-        type: Date,
-        default: null
-    },
-    referred_by: {
-        type: String,
-        default: null
+    tags: {
+        type: [String],
+        default: []
     }
 });
-const UserSchema = mongoose.model("user", User);
-exports.default = UserSchema;
+const PostSchema = mongoose.model("post", Post);
+exports.default = PostSchema;

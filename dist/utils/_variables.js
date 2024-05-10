@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.expiringTimes = exports.otpKeys = exports.userTypes = exports.verificationTypes = exports.jwtAlgo = exports.subRoutes = exports.routes = exports.v2 = exports.v1 = void 0;
+exports.hour24Milliseconds = exports.expiringTimes = exports.otpKeys = exports.userTypes = exports.verificationTypes = exports.jwtAlgo = exports.cloudinaryFolderName = exports.subRoutes = exports.routes = exports.v2 = exports.v1 = void 0;
 exports.v1 = "/v1", exports.v2 = "/v2", exports.routes = {
     auth: "/auth",
     user: "/user",
+    post: "/post",
     verifyOTP: "/verify-otp",
     sendOTP: "/send-otp",
     verifyEmail: "/verify-email"
@@ -11,6 +12,7 @@ exports.v1 = "/v1", exports.v2 = "/v2", exports.routes = {
     login: "/login",
     register: "/signup",
     image: "/image",
+    nearby: "/nearby",
     address: "/locations",
     forgotPassword: "/forgot-password",
     referrals: "/referrals",
@@ -20,6 +22,10 @@ exports.v1 = "/v1", exports.v2 = "/v2", exports.routes = {
     mood: "/mood",
     location: "/location",
     video: "/video"
+}, exports.cloudinaryFolderName = {
+    video: "video-upload",
+    image: "image-upload",
+    post: "post-upload"
 }, exports.jwtAlgo = "RS512", exports.verificationTypes = {
     forgotPassword: "forgot-password",
     phone: "phone",
@@ -35,4 +41,4 @@ exports.v1 = "/v1", exports.v2 = "/v2", exports.routes = {
     forgotPasswordToken: "forgot-password-token"
 }, exports.expiringTimes = {
     otp: 300000
-};
+}, exports.hour24Milliseconds = 86400000;

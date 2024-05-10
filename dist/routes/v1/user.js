@@ -13,6 +13,7 @@ userRoute
     .patch(user_1.updateUserDetailsController)
     .delete(user_1.deleteUserDetailsController);
 userRoute.route(_variables_1.subRoutes.mood).post(user_1.updateUserMoodController);
-userRoute.route(_variables_1.subRoutes.location).post(user_1.updateUserMoodController);
+userRoute.route(_variables_1.subRoutes.location).post(user_1.updateUserLocationController);
 userRoute.route(_variables_1.subRoutes.video).post(user_1.updateUserVideoController);
+userRoute.route(_variables_1.subRoutes.image).post(user_1.updateUserAvatarController);
 exports.default = userRoute;

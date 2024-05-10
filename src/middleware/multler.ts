@@ -1,7 +1,7 @@
 import multer from "multer";
 
 const videoStorage = multer.diskStorage({
-  destination: "videos", // Destination to store video
+  destination: "files/videos", // Destination to store video
   filename: (req, file, cb) => {
     const fileExt = file.originalname.split(".").pop();
     const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;
@@ -9,7 +9,7 @@ const videoStorage = multer.diskStorage({
   }
 });
 const postStorage = multer.diskStorage({
-  destination: "post", // Destination to store video
+  destination: "files/post", // Destination to store video
   filename: (req, file, cb) => {
     const fileExt = file.originalname.split(".").pop();
     const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;
@@ -19,7 +19,7 @@ const postStorage = multer.diskStorage({
 
 const imageStorage = multer.diskStorage({
   // Destination to store image
-  destination: "images",
+  destination: "files/images",
   filename: (req, file, cb) => {
     const fileExt = file.originalname.split(".").pop();
     const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;

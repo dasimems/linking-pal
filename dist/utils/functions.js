@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendMail = exports.generateOTP = exports.reverseToken = exports.generateToken = exports.createPassword = exports.fetchCacheEmail = exports.cacheEmail = exports.fetchCachedForgotPasswordToken = exports.cacheForgotPasswordToken = exports.fetchCachedForgotPasswordOTP = exports.cacheForgotPasswordOTP = exports.fetchCachedMobileNumberOTP = exports.cacheMobileNumberOTP = exports.fetchCachedEmailOTP = exports.cacheEmailOTP = exports.createUserDetails = exports.generateCacheKey = exports.validateUser = exports.validateValues = exports.doRequestBodyHaveError = void 0;
+exports.convertMinToSecs = exports.sendMail = exports.generateOTP = exports.reverseToken = exports.generateToken = exports.createPassword = exports.fetchCacheEmail = exports.cacheEmail = exports.fetchCachedForgotPasswordToken = exports.cacheForgotPasswordToken = exports.fetchCachedForgotPasswordOTP = exports.cacheForgotPasswordOTP = exports.fetchCachedMobileNumberOTP = exports.cacheMobileNumberOTP = exports.fetchCachedEmailOTP = exports.cacheEmailOTP = exports.getFileRoute = exports.getCloudinaryPublicId = exports.createPostDetails = exports.createUserDetails = exports.generateCacheKey = exports.validatePost = exports.validateUser = exports.validateValues = exports.doRequestBodyHaveError = void 0;
 const node_cache_1 = __importDefault(require("node-cache"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -20,6 +20,7 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const UserSchema_1 = __importDefault(require("../models/UserSchema"));
 const responses_1 = require("./responses");
 const _variables_1 = require("./_variables");
+const PostSchema_1 = __importDefault(require("../models/PostSchema"));
 dotenv_1.default.config();
 const env = process.env;
 const cache = new node_cache_1.default({ stdTTL: 100, checkperiod: 120 });
@@ -127,6 +128,10 @@ exports.validateValues = validateValues;
 const validateUser = (req, res, omitVerification) => __awaiter(void 0, void 0, void 0, function* () {
     let response = Object.assign({}, responses_1.unauthorizedResponse);
     const { userId } = req.body;
+    if (!userId) {
+        res.status(response.status).json(response);
+        return;
+    }
     try {
         const user = yield UserSchema_1.default.findById(userId);
         if (user) {
@@ -139,6 +144,10 @@ const validateUser = (req, res, omitVerification) => __awaiter(void 0, void 0, v
                 if (omitVerification) {
                     return user;
                 }
+                else {
+                    res.status(response.status).json(response);
+                    return;
+                }
             }
             else {
                 return user;
@@ -146,14 +155,44 @@ const validateUser = (req, res, omitVerification) => __awaiter(void 0, void 0, v
         }
         else {
             res.status(response.status).json(response);
+            return;
         }
     }
     catch (error) {
+        response = Object.assign({}, responses_1.internalServerResponse);
+        res.status(response.status).json(response);
+        return;
         // create error log
     }
-    return;
 });
 exports.validateUser = validateUser;
+const validatePost = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    let response = Object.assign(Object.assign({}, responses_1.internalServerResponse), { message: "Something went wrong!" });
+    if (id) {
+        try {
+            const postDetails = yield PostSchema_1.default.findById(id);
+            if (postDetails) {
+                return postDetails;
+            }
+            else {
+                response = Object.assign(Object.assign({}, responses_1.notFoundResponse), { message: "Post doesn't exist or is deleted" });
+                res.status(response.status).json(response);
+                return;
+            }
+        }
+        catch (error) {
+            res.status(response.status).json(response);
+            return;
+        }
+    }
+    else {
+        response = Object.assign(Object.assign({}, responses_1.badRequestResponse), { message: "Post id not found" });
+        res.status(response.status).json(response);
+        return;
+    }
+});
+exports.validatePost = validatePost;
 const generateCacheKey = (extension, id) => {
     return `${extension}-${id}`;
 };
@@ -161,6 +200,7 @@ exports.generateCacheKey = generateCacheKey;
 const createUserDetails = (user) => {
     if (user) {
         return {
+            avatar: user.avatar,
             email: user.email,
             id: user._id,
             is_phone_verified: user.is_phone_verified,
@@ -179,6 +219,45 @@ const createUserDetails = (user) => {
     }
 };
 exports.createUserDetails = createUserDetails;
+const createPostDetails = (post) => {
+    if (post) {
+        return {
+            text: post.text,
+            tags: post.tags,
+            files: post.files,
+            created_at: post.created_at,
+            created_by: post.created_by
+        };
+    }
+};
+exports.createPostDetails = createPostDetails;
+const getCloudinaryPublicId = (fileName, type) => {
+    let folderName = "";
+    switch (type) {
+        case "image":
+            folderName = _variables_1.cloudinaryFolderName.image;
+            break;
+        case "video":
+            folderName = _variables_1.cloudinaryFolderName.video;
+            break;
+        case "post":
+            folderName = _variables_1.cloudinaryFolderName.post;
+            break;
+        default:
+            break;
+    }
+    return type ? `${folderName}/${fileName}` : "";
+};
+exports.getCloudinaryPublicId = getCloudinaryPublicId;
+const getFileRoute = (userId, fileName) => {
+    if (userId && fileName) {
+        return `${userId}/${fileName}`;
+    }
+    else {
+        return fileName || "";
+    }
+};
+exports.getFileRoute = getFileRoute;
 const cacheEmailOTP = (otp, id) => {
     return cache.set((0, exports.generateCacheKey)(_variables_1.otpKeys.email, id), { otp }, _variables_1.expiringTimes.otp);
 };
@@ -285,3 +364,7 @@ const sendMail = ({ sender, receiver, subject, message }) => {
     });
 };
 exports.sendMail = sendMail;
+const convertMinToSecs = (min = 1) => {
+    return min * 60;
+};
+exports.convertMinToSecs = convertMinToSecs;

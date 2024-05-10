@@ -9,11 +9,13 @@ const user_1 = __importDefault(require("./user"));
 const token_1 = require("../../middleware/token");
 const auth_1 = __importDefault(require("./auth"));
 const verification_1 = require("../../controllers/verification");
+const post_1 = __importDefault(require("./post"));
 const v1route = express_1.default.Router();
 v1route.get("/", (_, res) => {
     res.send("This is version one");
 });
 v1route.use(_variables_1.routes.user, token_1.verifyUserToken, user_1.default);
+v1route.use(_variables_1.routes.post, token_1.verifyUserToken, post_1.default);
 v1route.use(_variables_1.routes.auth, auth_1.default);
 v1route.post(_variables_1.routes.sendOTP, verification_1.sendOTPController);
 v1route.post(_variables_1.routes.verifyOTP, token_1.verifyOTPToken, verification_1.verifyOTPController);

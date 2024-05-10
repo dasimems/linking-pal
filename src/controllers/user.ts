@@ -370,7 +370,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               res.status(response.status).json(response);
               return;
             } else {
-              const fName = req.file.originalname.split(".")[0];
+              const fName = req.file.originalname.split(".")[0].split(" ")[0];
               const userFileName = getFileRoute(user.id, fName);
               if (user.video) {
                 const splittedUserVideo = user.video.split("/");
@@ -485,7 +485,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
         if (!err && req.file) {
           const { path } = req.file;
           try {
-            const fName = req.file.originalname.split(".")[0];
+            const fName = req.file.originalname.split(".")[0].split(" ")[0];
             const userFileName = getFileRoute(user.id, fName);
 
             if (user.avatar) {
