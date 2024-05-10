@@ -155,7 +155,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
         const _ = await UserSchema.findByIdAndDelete(userId);
         response = {
           ...processedResponse,
-          message: "User already deleted"
+          message: "User deleted successfully"
         };
       } else {
         return;

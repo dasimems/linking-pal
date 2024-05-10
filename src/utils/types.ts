@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { Types } from "mongoose";
 
 export type ControllerType = (req: Request, res: Response) => void;
 export type MiddleWareType = (
@@ -31,6 +32,36 @@ export interface UserDetailsType {
   is_verified: boolean;
   has_subscribed: boolean;
   avatar: string;
+}
+
+export interface NotificationDetailsType {
+  message: string;
+  image: string;
+  created_at: Date;
+  initiator_id: string;
+  action_performed: "rejected" | "accepted";
+  receiver_id: string;
+  accept_url: string | null;
+  reject_url: string | null;
+  status: "read" | "unread";
+}
+export interface PostDetailsType {
+  text: string;
+  files: string[];
+  created_at: Date;
+  created_by: Types.ObjectId;
+  tags: string[];
+}
+export interface CommentDetailsType {
+  comment: string;
+  created_at: Date;
+  created_by: string;
+  post_id: string;
+}
+export interface LikeDetailsType {
+  post_id: string;
+  created_at: string;
+  created_by: string;
 }
 
 export interface TokenType {

@@ -46,3 +46,8 @@ export interface AUthorizedBody {
 export interface UserDetailsResponseType extends UserDetailsType {
   id: string;
 }
+
+export interface PostBodyType {
+  text: string;
+  tags: string[];
+}

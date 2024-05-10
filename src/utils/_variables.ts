@@ -5,6 +5,7 @@ export const v1 = "/v1",
   routes = {
     auth: "/auth",
     user: "/user",
+    post: "/post",
     verifyOTP: "/verify-otp",
     sendOTP: "/send-otp",
     verifyEmail: "/verify-email"
@@ -13,6 +14,7 @@ export const v1 = "/v1",
     login: "/login",
     register: "/signup",
     image: "/image",
+    nearby: "/nearby",
     address: "/locations",
     forgotPassword: "/forgot-password",
     referrals: "/referrals",
@@ -23,7 +25,11 @@ export const v1 = "/v1",
     location: "/location",
     video: "/video"
   },
-  cloudinaryFolderName = { video: "video-upload", image: "image-upload" },
+  cloudinaryFolderName = {
+    video: "video-upload",
+    image: "image-upload",
+    post: "post-upload"
+  },
   jwtAlgo: Algorithm = "RS512",
   verificationTypes = {
     forgotPassword: "forgot-password",

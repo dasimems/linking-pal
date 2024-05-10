@@ -3,17 +3,20 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 // import { jwtAlgo } from "./variable";
-import { OTPTokenType, TokenType } from "./types";
+import { OTPTokenType, PostDetailsType, TokenType } from "./types";
 import { Document, Types } from "mongoose";
 import UserSchema, { IUser } from "../models/UserSchema";
 import { AUthorizedBody, UserDetailsResponseType } from "../controllers";
 import { Request, Response } from "express";
 import {
+  badRequestResponse,
   forbiddenResponse,
   internalServerResponse,
+  notFoundResponse,
   unauthorizedResponse
 } from "./responses";
 import { cloudinaryFolderName, expiringTimes, otpKeys } from "./_variables";
+import PostSchema, { IPost } from "../models/PostSchema";
 
 dotenv.config();
 const env = process.env;
@@ -256,7 +259,41 @@ export const validateUser = async (
     return;
     // create error log
   }
-  return;
+};
+
+export const validatePost = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  let response = {
+    ...internalServerResponse,
+    message: "Something went wrong!"
+  };
+
+  if (id) {
+    try {
+      const postDetails = await PostSchema.findById(id);
+      if (postDetails) {
+        return postDetails;
+      } else {
+        response = {
+          ...notFoundResponse,
+          message: "Post doesn't exist or is deleted"
+        };
+        res.status(response.status).json(response);
+        return;
+      }
+    } catch (error: any) {
+      res.status(response.status).json(response);
+      return;
+    }
+  } else {
+    response = {
+      ...badRequestResponse,
+      message: "Post id not found"
+    };
+    res.status(response.status).json(response);
+    return;
+  }
 };
 
 export const generateCacheKey = (extension: string, id: string) => {
@@ -290,10 +327,27 @@ export const createUserDetails = (
     };
   }
 };
+export const createPostDetails = (
+  post:
+    | (IPost & {
+        _id: Types.ObjectId;
+      })
+    | null
+): PostDetailsType | undefined => {
+  if (post) {
+    return {
+      text: post.text,
+      tags: post.tags,
+      files: post.files,
+      created_at: post.created_at,
+      created_by: post.created_by
+    };
+  }
+};
 
 export const getCloudinaryPublicId = (
   fileName: string,
-  type: "video" | "image"
+  type: "video" | "image" | "post"
 ) => {
   let folderName = "";
 
@@ -303,6 +357,9 @@ export const getCloudinaryPublicId = (
       break;
     case "video":
       folderName = cloudinaryFolderName.video;
+      break;
+    case "post":
+      folderName = cloudinaryFolderName.post;
       break;
 
     default:
