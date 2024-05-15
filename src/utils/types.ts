@@ -15,6 +15,7 @@ export interface ResponseType {
   error?: any;
   token?: string;
   total?: number;
+  count?: number;
 }
 
 export interface UserDetailsType {
@@ -36,11 +37,9 @@ export interface UserDetailsType {
 
 export interface NotificationDetailsType {
   message: string;
-  image: string;
+  image: string | null;
   created_at: Date;
-  initiator_id: string;
   action_performed: "rejected" | "accepted";
-  receiver_id: string;
   accept_url: string | null;
   reject_url: string | null;
   status: "read" | "unread";

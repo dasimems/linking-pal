@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.postUpload = exports.videUpload = exports.imageUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const videoStorage = multer_1.default.diskStorage({
-    destination: "videos", // Destination to store video
+    destination: "files/videos", // Destination to store video
     filename: (req, file, cb) => {
         const fileExt = file.originalname.split(".").pop();
         const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;
@@ -14,7 +14,7 @@ const videoStorage = multer_1.default.diskStorage({
     }
 });
 const postStorage = multer_1.default.diskStorage({
-    destination: "post", // Destination to store video
+    destination: "files/post", // Destination to store video
     filename: (req, file, cb) => {
         const fileExt = file.originalname.split(".").pop();
         const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;
@@ -23,7 +23,7 @@ const postStorage = multer_1.default.diskStorage({
 });
 const imageStorage = multer_1.default.diskStorage({
     // Destination to store image
-    destination: "images",
+    destination: "files/images",
     filename: (req, file, cb) => {
         const fileExt = file.originalname.split(".").pop();
         const filename = `${file.fieldname}_${new Date().getTime()}.${fileExt}`;

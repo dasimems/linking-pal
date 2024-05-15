@@ -9,6 +9,7 @@ import {
   verifyOTPController
 } from "../../controllers/verification";
 import postRoute from "./post";
+import notificationRoute from "./notification";
 const v1route = express.Router();
 
 v1route.get("/", (_, res) => {
@@ -16,6 +17,7 @@ v1route.get("/", (_, res) => {
 });
 v1route.use(routes.user, verifyUserToken, userRoute);
 v1route.use(routes.post, verifyUserToken, postRoute);
+v1route.use(routes.notification, verifyUserToken, notificationRoute);
 v1route.use(routes.auth, authRoute);
 v1route.post(routes.sendOTP, sendOTPController);
 v1route.post(routes.verifyOTP, verifyOTPToken, verifyOTPController);

@@ -242,7 +242,7 @@ const getUserDetailsController = (req, res) => __awaiter(void 0, void 0, void 0,
                         return;
                     }
                     else {
-                        const fName = req.file.originalname.split(".")[0];
+                        const fName = req.file.originalname.split(".")[0].split(" ")[0];
                         const userFileName = (0, functions_1.getFileRoute)(user.id, fName);
                         if (user.video) {
                             const splittedUserVideo = user.video.split("/");
@@ -318,7 +318,7 @@ const getUserDetailsController = (req, res) => __awaiter(void 0, void 0, void 0,
             if (!err && req.file) {
                 const { path } = req.file;
                 try {
-                    const fName = req.file.originalname.split(".")[0];
+                    const fName = req.file.originalname.split(".")[0].split(" ")[0];
                     const userFileName = (0, functions_1.getFileRoute)(user.id, fName);
                     if (user.avatar) {
                         const splittedUserVideo = user.avatar.split("/");

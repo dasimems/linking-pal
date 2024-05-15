@@ -3,7 +3,12 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 // import { jwtAlgo } from "./variable";
-import { OTPTokenType, PostDetailsType, TokenType } from "./types";
+import {
+  NotificationDetailsType,
+  OTPTokenType,
+  PostDetailsType,
+  TokenType
+} from "./types";
 import { Document, Types } from "mongoose";
 import UserSchema, { IUser } from "../models/UserSchema";
 import { AUthorizedBody, UserDetailsResponseType } from "../controllers";
@@ -17,6 +22,9 @@ import {
 } from "./responses";
 import { cloudinaryFolderName, expiringTimes, otpKeys } from "./_variables";
 import PostSchema, { IPost } from "../models/PostSchema";
+import NotificationSchema, {
+  INotification
+} from "../models/NotificationSchema";
 
 dotenv.config();
 const env = process.env;
@@ -295,6 +303,40 @@ export const validatePost = async (req: Request, res: Response) => {
     return;
   }
 };
+export const validateNotification = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  let response = {
+    ...internalServerResponse,
+    message: "Something went wrong!"
+  };
+
+  if (id) {
+    try {
+      const notificationDetails = await NotificationSchema.findById(id);
+      if (notificationDetails) {
+        return notificationDetails;
+      } else {
+        response = {
+          ...notFoundResponse,
+          message: "Notification doesn't exist or is deleted"
+        };
+        res.status(response.status).json(response);
+        return;
+      }
+    } catch (error: any) {
+      res.status(response.status).json(response);
+      return;
+    }
+  } else {
+    response = {
+      ...badRequestResponse,
+      message: "Notification id not found"
+    };
+    res.status(response.status).json(response);
+    return;
+  }
+};
 
 export const generateCacheKey = (extension: string, id: string) => {
   return `${extension}-${id}`;
@@ -341,6 +383,25 @@ export const createPostDetails = (
       files: post.files,
       created_at: post.created_at,
       created_by: post.created_by
+    };
+  }
+};
+export const createNotificationDetails = (
+  notification:
+    | (INotification & {
+        _id: Types.ObjectId;
+      })
+    | null
+): NotificationDetailsType | undefined => {
+  if (notification) {
+    return {
+      message: notification.message,
+      accept_url: notification.accept_url,
+      reject_url: notification.reject_url,
+      action_performed: notification.action_performed,
+      created_at: notification.created_at,
+      image: notification.image,
+      status: notification.status
     };
   }
 };

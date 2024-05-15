@@ -25,12 +25,14 @@ export const getPostController: ControllerType = async (req, res) => {
     if (user) {
       try {
         const postList = await PostSchema.find({
-          _id: user.id
+          created_by: user.id
         });
+
+        const formatedPost = postList.map((post) => createPostDetails(post));
 
         response = {
           ...getResponse,
-          data: postList,
+          data: formatedPost,
           total: postList.length
         };
       } catch (error) {

@@ -6,6 +6,7 @@ export const v1 = "/v1",
     auth: "/auth",
     user: "/user",
     post: "/post",
+    notification: "/notification",
     verifyOTP: "/verify-otp",
     sendOTP: "/send-otp",
     verifyEmail: "/verify-email"
