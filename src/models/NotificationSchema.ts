@@ -1,5 +1,6 @@
 import * as mongoose from "mongoose";
 import { NotificationDetailsType } from "../utils/types";
+import { dbCollectionNames } from "../utils/_variables";
 
 type NotificationDocType = NotificationDetailsType & Document;
 export interface INotification extends NotificationDocType {
@@ -49,7 +50,7 @@ const Notification = new Schema<INotification>({
 });
 
 const NotificationSchema = mongoose.model<INotification>(
-  "notification",
+  dbCollectionNames.notification,
   Notification
 );
 

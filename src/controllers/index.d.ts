@@ -1,4 +1,11 @@
-import { UserDetailsType } from "../utils/types";
+import {
+  AuthorDetailsType,
+  CommentDetailsType,
+  LikeDetailsType,
+  NotificationDetailsType,
+  PostDetailsType,
+  UserDetailsType
+} from "../utils/types";
 
 export interface LoginBody {
   email: string;
@@ -44,6 +51,22 @@ export interface AUthorizedBody {
 }
 
 export interface UserDetailsResponseType extends UserDetailsType {
+  id: string;
+}
+export interface AuthorDetailsResponseType extends AuthorDetailsType {
+  id: string;
+}
+export interface PostDetailsResponseType extends PostDetailsType {
+  id: string;
+}
+export interface CommentDetailsResponseType extends CommentDetailsType {
+  id: string;
+}
+export interface NotificationDetailsResponseType
+  extends NotificationDetailsType {
+  id: string;
+}
+export interface LikeDetailsResponseType extends LikeDetailsType {
   id: string;
 }
 

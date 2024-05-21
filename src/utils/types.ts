@@ -34,6 +34,22 @@ export interface UserDetailsType {
   has_subscribed: boolean;
   avatar: string;
 }
+export interface AuthorDetailsType {
+  // email: string;
+  mood: string[];
+  name: string;
+  // bio: string;
+  // dob: Date;
+  // mobile_number: number;
+  // is_phone_verified: boolean;
+  // is_email_verified: boolean;
+  // video: string;
+  // created_at: Date;
+  // updated_at: Date;
+  // is_verified: boolean;
+  // has_subscribed: boolean;
+  avatar: string;
+}
 
 export interface NotificationDetailsType {
   message: string;
@@ -50,17 +66,21 @@ export interface PostDetailsType {
   created_at: Date;
   created_by: Types.ObjectId;
   tags: string[];
+  comments: string[];
+  likes: string[];
 }
 export interface CommentDetailsType {
   comment: string;
   created_at: Date;
-  created_by: string;
-  post_id: string;
+  created_by: Types.ObjectId;
+  post_id: Types.ObjectId;
+  likes: string[];
+  replies: string[];
 }
 export interface LikeDetailsType {
-  post_id: string;
-  created_at: string;
-  created_by: string;
+  post_id: Types.ObjectId;
+  created_at: Date;
+  created_by: Types.ObjectId;
 }
 
 export interface TokenType {

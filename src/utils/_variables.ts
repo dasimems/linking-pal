@@ -23,6 +23,7 @@ export const v1 = "/v1",
     updateEmail: "/update-email",
     updateProfile: "/update-profile",
     mood: "/mood",
+    all: "/all",
     location: "/location",
     video: "/video"
   },
@@ -50,5 +51,13 @@ export const v1 = "/v1",
   },
   expiringTimes = {
     otp: 300000
+  },
+  dbCollectionNames = {
+    notification: "notification",
+    post: "post",
+    user: "user",
+    like: "like",
+    comment: "comment",
+    chat: "chat"
   },
   hour24Milliseconds = 86400000;

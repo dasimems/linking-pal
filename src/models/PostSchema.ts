@@ -1,5 +1,6 @@
 import * as mongoose from "mongoose";
 import { PostDetailsType } from "../utils/types";
+import { dbCollectionNames } from "../utils/_variables";
 
 type PostDocType = PostDetailsType & Document;
 export interface IPost extends PostDocType {}
@@ -26,9 +27,17 @@ const Post = new Schema<IPost>({
   tags: {
     type: [String],
     default: []
+  },
+  comments: {
+    type: [String],
+    default: []
+  },
+  likes: {
+    type: [String],
+    default: []
   }
 });
 
-const PostSchema = mongoose.model<IPost>("post", Post);
+const PostSchema = mongoose.model<IPost>(dbCollectionNames.post, Post);
 
 export default PostSchema;

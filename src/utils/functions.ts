@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 // import { jwtAlgo } from "./variable";
 import {
+  CommentDetailsType,
   NotificationDetailsType,
   OTPTokenType,
   PostDetailsType,
@@ -11,7 +12,14 @@ import {
 } from "./types";
 import { Document, Types } from "mongoose";
 import UserSchema, { IUser } from "../models/UserSchema";
-import { AUthorizedBody, UserDetailsResponseType } from "../controllers";
+import {
+  AuthorDetailsResponseType,
+  AUthorizedBody,
+  CommentDetailsResponseType,
+  NotificationDetailsResponseType,
+  PostDetailsResponseType,
+  UserDetailsResponseType
+} from "../controllers";
 import { Request, Response } from "express";
 import {
   badRequestResponse,
@@ -25,6 +33,7 @@ import PostSchema, { IPost } from "../models/PostSchema";
 import NotificationSchema, {
   INotification
 } from "../models/NotificationSchema";
+import { IComment } from "../models/CommentSchema";
 
 dotenv.config();
 const env = process.env;
@@ -369,20 +378,69 @@ export const createUserDetails = (
     };
   }
 };
+export const createAuthorDetails = (
+  user:
+    | (IUser & {
+        _id: Types.ObjectId;
+      })
+    | null
+): AuthorDetailsResponseType | undefined => {
+  if (user) {
+    return {
+      avatar: user.avatar,
+      // email: user.email as string,
+      id: user._id as unknown as string,
+      // is_phone_verified: user.is_phone_verified,
+      // is_email_verified: user.is_email_verified,
+      // is_verified: user.is_verified,
+      // has_subscribed: user.has_subscribed,
+      // created_at: user.created_at,
+      // updated_at: user.updated_at,
+      // video: user.video,
+      name: user.name,
+      // bio: user.bio,
+      // dob: user.dob,
+      mood: user.mood
+      // mobile_number: user.mobile_number
+    };
+  }
+};
 export const createPostDetails = (
   post:
     | (IPost & {
         _id: Types.ObjectId;
       })
     | null
-): PostDetailsType | undefined => {
+): PostDetailsResponseType | undefined => {
   if (post) {
     return {
+      id: post._id as unknown as string,
       text: post.text,
       tags: post.tags,
       files: post.files,
       created_at: post.created_at,
-      created_by: post.created_by
+      created_by: post.created_by,
+      comments: post.comments,
+      likes: post.likes
+    };
+  }
+};
+export const createCommentDetails = (
+  comment:
+    | (IComment & {
+        _id: Types.ObjectId;
+      })
+    | null
+): CommentDetailsResponseType | undefined => {
+  if (comment) {
+    return {
+      id: comment._id as unknown as string,
+      created_at: comment.created_at,
+      created_by: comment.created_by,
+      post_id: comment.post_id,
+      comment: comment.comment,
+      likes: comment.likes,
+      replies: comment.replies
     };
   }
 };
@@ -392,9 +450,10 @@ export const createNotificationDetails = (
         _id: Types.ObjectId;
       })
     | null
-): NotificationDetailsType | undefined => {
+): NotificationDetailsResponseType | undefined => {
   if (notification) {
     return {
+      id: notification._id as unknown as string,
       message: notification.message,
       accept_url: notification.accept_url,
       reject_url: notification.reject_url,
@@ -404,6 +463,37 @@ export const createNotificationDetails = (
       status: notification.status
     };
   }
+};
+
+export const calculateDistanceBetweenTwoPoints = (
+  coords1: { longitude: string; latitude: string },
+  coords2: { longitude: string; latitude: string }
+) => {
+  function toRad(x: number) {
+    return (x * Math.PI) / 180;
+  }
+
+  const lat1 = parseFloat(coords1.latitude);
+  const lon1 = parseFloat(coords1.latitude);
+  const lat2 = parseFloat(coords2.longitude);
+  const lon2 = parseFloat(coords2.latitude);
+
+  const R = 6371; // km
+
+  const x1 = lat2 - lat1;
+  const dLat = toRad(x1);
+  const x2 = lon2 - lon1;
+  const dLon = toRad(x2);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+
+  return d;
 };
 
 export const getCloudinaryPublicId = (

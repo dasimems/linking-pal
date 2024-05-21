@@ -1,5 +1,6 @@
 import * as mongoose from "mongoose";
 import { UserDetailsType } from "../utils/types";
+import { dbCollectionNames } from "../utils/_variables";
 
 type UserDocType = UserDetailsType & Document;
 export interface IUser extends UserDocType {
@@ -93,6 +94,6 @@ const User = new Schema<IUser>({
   }
 });
 
-const UserSchema = mongoose.model<IUser>("user", User);
+const UserSchema = mongoose.model<IUser>(dbCollectionNames.user, User);
 
 export default UserSchema;
