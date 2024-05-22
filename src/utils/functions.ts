@@ -16,6 +16,7 @@ import {
   AuthorDetailsResponseType,
   AUthorizedBody,
   CommentDetailsResponseType,
+  LikeDetailsResponseType,
   NotificationDetailsResponseType,
   PostDetailsResponseType,
   UserDetailsResponseType
@@ -34,6 +35,7 @@ import NotificationSchema, {
   INotification
 } from "../models/NotificationSchema";
 import { IComment } from "../models/CommentSchema";
+import { ILike } from "../models/LikesSchema";
 
 dotenv.config();
 const env = process.env;
@@ -268,7 +270,13 @@ export const validateUser = async (
       res.status(response.status).json(response);
       return;
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message) {
+      response = {
+        ...response,
+        message: error?.message
+      };
+    }
     response = {
       ...internalServerResponse
     };
@@ -280,6 +288,7 @@ export const validateUser = async (
 
 export const validatePost = async (req: Request, res: Response) => {
   const { id } = req.params;
+  console.log(id);
 
   let response = {
     ...internalServerResponse,
@@ -300,7 +309,13 @@ export const validatePost = async (req: Request, res: Response) => {
         return;
       }
     } catch (error: any) {
-      res.status(response.status).json(response);
+      if (error?.message) {
+        response = {
+          ...response,
+          message: error?.message
+        };
+      }
+      res.status(response.status).send(response);
       return;
     }
   } else {
@@ -334,6 +349,12 @@ export const validateNotification = async (req: Request, res: Response) => {
         return;
       }
     } catch (error: any) {
+      if (error?.message) {
+        response = {
+          ...response,
+          message: error?.message
+        };
+      }
       res.status(response.status).json(response);
       return;
     }
@@ -419,6 +440,7 @@ export const createPostDetails = (
       tags: post.tags,
       files: post.files,
       created_at: post.created_at,
+      updated_at: post.updated_at,
       created_by: post.created_by,
       comments: post.comments,
       likes: post.likes
@@ -436,11 +458,28 @@ export const createCommentDetails = (
     return {
       id: comment._id as unknown as string,
       created_at: comment.created_at,
+      updated_at: comment.updated_at,
       created_by: comment.created_by,
       post_id: comment.post_id,
       comment: comment.comment,
       likes: comment.likes,
       replies: comment.replies
+    };
+  }
+};
+export const createLikeDetails = (
+  like:
+    | (ILike & {
+        _id: Types.ObjectId;
+      })
+    | null
+): LikeDetailsResponseType | undefined => {
+  if (like) {
+    return {
+      id: like._id as unknown as string,
+      created_at: like.created_at,
+      created_by: like.created_by,
+      post_id: like.post_id
     };
   }
 };

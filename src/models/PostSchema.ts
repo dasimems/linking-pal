@@ -20,6 +20,10 @@ const Post = new Schema<IPost>({
     type: Date,
     default: new Date()
   },
+  updated_at: {
+    type: Date,
+    default: null
+  },
   created_by: {
     type: "ObjectId",
     required: true
@@ -29,11 +33,11 @@ const Post = new Schema<IPost>({
     default: []
   },
   comments: {
-    type: [String],
+    type: ["ObjectId"],
     default: []
   },
   likes: {
-    type: [String],
+    type: ["ObjectId"],
     default: []
   }
 });

@@ -1,6 +1,8 @@
 import multer from "multer";
 import {
   AuthorDetailsResponseType,
+  CommentDetailsResponseType,
+  LikeDetailsResponseType,
   PostBodyType,
   PostDetailsResponseType
 } from ".";
@@ -9,7 +11,8 @@ import fs from "fs";
 import PostSchema from "../models/PostSchema";
 import {
   createAuthorDetails,
-  createPostDetails,
+  createCommentDetails,
+  createLikeDetails,
   getCloudinaryPublicId,
   getFileRoute,
   validatePost,
@@ -24,9 +27,16 @@ import {
   internalServerResponse,
   processedResponse
 } from "../utils/responses";
-import { ControllerType, PostDetailsType } from "../utils/types";
+import {
+  CommentDetailsType,
+  ControllerType,
+  PostDetailsType
+} from "../utils/types";
 import cloudinary from "../utils/cloudinary";
 import UserSchema from "../models/UserSchema";
+import CommentSchema from "../models/CommentSchema";
+import LikeSchema from "../models/LikesSchema";
+import { createPostDetails } from "../utils/functions";
 
 export const getPostController: ControllerType = async (req, res) => {
     let response = {
@@ -38,10 +48,30 @@ export const getPostController: ControllerType = async (req, res) => {
     if (user) {
       try {
         const postList = await PostSchema.find({
-          created_by: user.id
+          created_by: user._id
         });
-        const postAuthors = await Promise.all(
+        const postAuthorsPromise = Promise.all(
           postList.map((post) => UserSchema.findById(post.created_by))
+        );
+
+        const postLikesPromise = Promise.all(
+          postList.map((post) =>
+            Promise.all(post.likes.map((like) => LikeSchema.findById(like)))
+          )
+        );
+
+        const [postAuthors, postLikes] = await Promise.all([
+          postAuthorsPromise,
+          postLikesPromise
+        ]);
+        const postLikesAvailable = postLikes.map((posts) =>
+          posts.find(
+            (post) =>
+              post &&
+              JSON.stringify(post.created_by) === JSON.stringify(user._id)
+          )
+            ? true
+            : false
         );
 
         const formatedPost = postList
@@ -51,7 +81,7 @@ export const getPostController: ControllerType = async (req, res) => {
             created_by: createAuthorDetails(postAuthors[index]),
             comments: post?.comments.length,
             likes: post?.likes.length,
-            is_like_by_user: post?.comments.includes(user?.id)
+            is_like_by_user: postLikesAvailable[index]
           }));
 
         response = {
@@ -84,8 +114,28 @@ export const getPostController: ControllerType = async (req, res) => {
           latitude: latitude || user.latitude
         };
         const postList = await PostSchema.find();
-        const postAuthors = await Promise.all(
+        const postAuthorsPromise = Promise.all(
           postList.map((post) => UserSchema.findById(post.created_by))
+        );
+
+        const postLikesPromise = Promise.all(
+          postList.map((post) =>
+            Promise.all(post.likes.map((like) => LikeSchema.findById(like)))
+          )
+        );
+
+        const [postAuthors, postLikes] = await Promise.all([
+          postAuthorsPromise,
+          postLikesPromise
+        ]);
+        const postLikesAvailable = postLikes.map((posts) =>
+          posts.find(
+            (post) =>
+              post &&
+              JSON.stringify(post.created_by) === JSON.stringify(user._id)
+          )
+            ? true
+            : false
         );
         // let postToSend = postList;
         const formatedPost = postList
@@ -95,7 +145,7 @@ export const getPostController: ControllerType = async (req, res) => {
             created_by: createAuthorDetails(postAuthors[index]),
             comments: post?.comments.length,
             likes: post?.likes.length,
-            is_like_by_user: post?.comments.includes(user?.id)
+            is_like_by_user: postLikesAvailable[index]
           }));
 
         response = {
@@ -327,10 +377,65 @@ export const getPostController: ControllerType = async (req, res) => {
 
       if (post) {
         try {
-          const postDetails = createPostDetails(post);
+          const authorPromise = UserSchema.findById(post.created_by);
+          const commentPromise = Promise.all(
+            post.comments.map((id) => CommentSchema.findById(id))
+          );
+          const likePromise = Promise.all(
+            post.likes.map((id) => LikeSchema.findById(id))
+          );
+          const [authorDetails, commentDetails, likeDetails] =
+            await Promise.all([authorPromise, commentPromise, likePromise]);
+          const isLikeAvailable = likeDetails.find(
+            (like) =>
+              JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+          );
+          const commentAuthorsPromise = Promise.all(
+            commentDetails.map((comment) =>
+              comment?.created_by
+                ? UserSchema.findById(comment?.created_by)
+                : undefined
+            )
+          );
+          const likeAuthorsPromise = Promise.all(
+            likeDetails.map((like) =>
+              like?.created_by
+                ? UserSchema.findById(like?.created_by)
+                : undefined
+            )
+          );
+
+          const [commentAuthors, likeAuthors] = await Promise.all([
+            commentAuthorsPromise,
+            likeAuthorsPromise
+          ]);
+          let data = createPostDetails(post);
+          if (authorDetails) {
+            data = {
+              ...data,
+              created_by: createAuthorDetails(authorDetails),
+              likes: likeDetails.map((like, index) => ({
+                ...createLikeDetails(like),
+                created_by: createAuthorDetails(likeAuthors[index] || null)
+              })),
+              comments: commentDetails.map((comment, index) => ({
+                ...createCommentDetails(comment),
+                created_by: createAuthorDetails(commentAuthors[index] || null),
+                replies: comment?.replies?.length,
+                likes: comment?.likes?.length
+              })),
+              is_like_by_user: isLikeAvailable ? true : false
+            } as unknown as PostDetailsResponseType & {
+              created_by: AuthorDetailsResponseType;
+              likes: LikeDetailsResponseType &
+                { created_by: AuthorDetailsResponseType }[];
+              comment: CommentDetailsResponseType &
+                { created_by: AuthorDetailsResponseType }[];
+            };
+          }
           response = {
             ...getResponse,
-            data: postDetails
+            data
           };
         } catch (error) {}
       } else {
@@ -355,7 +460,7 @@ export const getPostController: ControllerType = async (req, res) => {
       text: {
         required: {
           value: true,
-          message: "Please provide your post description"
+          message: "Please provide description to update"
         }
       }
     });
@@ -367,33 +472,56 @@ export const getPostController: ControllerType = async (req, res) => {
         if (errors) {
           response = {
             ...badRequestResponse,
-            message: "Please your description can't be empty",
+            message: "Please provide description to update",
             error: errors
           };
         }
 
         if (!errors) {
           const { text } = body;
-          if (post.created_by !== user._id) {
+          const createdBy = JSON.stringify(post.created_by);
+          const userId = JSON.stringify(user._id);
+
+          if (createdBy !== userId) {
             response = {
               ...forbiddenResponse,
               message: "Unknown request"
             };
           }
 
-          if (post.created_by === user._id) {
+          if (createdBy === userId) {
             try {
-              const newPostDetails = await PostSchema.findByIdAndUpdate(
+              const availableLikesPromise = Promise.all(
+                post.likes.map((id) => LikeSchema.findById(id))
+              );
+
+              const newPostPromise = PostSchema.findByIdAndUpdate(
                 post._id,
                 {
-                  text
+                  text,
+                  updated_at: new Date()
                 },
                 { new: true }
+              );
+
+              const [newPostDetails, availableLikes] = await Promise.all([
+                newPostPromise,
+                availableLikesPromise
+              ]);
+
+              const isLikeAvailable = availableLikes.find(
+                (like) =>
+                  JSON.stringify(like?.created_by) === JSON.stringify(user._id)
               );
               const postDetails = createPostDetails(newPostDetails);
               response = {
                 ...getResponse,
-                data: postDetails
+                data: {
+                  ...postDetails,
+                  comments: postDetails?.comments?.length,
+                  likes: postDetails?.likes?.length,
+                  is_like_by_user: isLikeAvailable ? true : false
+                }
               };
             } catch (error) {}
           }
@@ -404,6 +532,222 @@ export const getPostController: ControllerType = async (req, res) => {
     } else {
       return;
     }
+
+    res.status(response.status).json(response);
+  },
+  likeAPostController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const post = await validatePost(req, res);
+
+      if (post) {
+        const likeBody = {
+          post_id: post._id,
+          created_at: new Date(),
+          created_by: user._id
+        };
+        try {
+          const availableLikes = await Promise.all(
+            post.likes.map((id) => LikeSchema.findById(id))
+          );
+
+          const isLikeAvailable = availableLikes.find(
+            (like) =>
+              JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+          );
+
+          if (isLikeAvailable) {
+            response = {
+              ...badRequestResponse,
+              message: "You already liked this post"
+            };
+          } else {
+            const likeDetails = await LikeSchema.create(likeBody);
+            const newPostDetails = await PostSchema.findByIdAndUpdate(
+              post._id,
+              {
+                likes: [...post.likes, likeDetails._id]
+              },
+              {
+                new: true
+              }
+            );
+            const data = {
+              ...createPostDetails(newPostDetails),
+              likes: newPostDetails?.likes.length,
+              comments: newPostDetails?.comments.length,
+              is_like_by_user: true
+            };
+
+            response = {
+              ...getResponse,
+              data
+            };
+          }
+        } catch (error) {}
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  dislikeAPostController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const post = await validatePost(req, res);
+
+      if (post) {
+        const likeBody = {
+          post_id: post._id,
+          created_at: new Date(),
+          created_by: user._id
+        };
+        try {
+          const availableLikes = await Promise.all(
+            post.likes.map((id) => LikeSchema.findById(id))
+          );
+
+          const isLikeAvailable = availableLikes.find(
+            (like) =>
+              JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+          );
+
+          if (isLikeAvailable) {
+            const likePromise = LikeSchema.findByIdAndDelete(
+              isLikeAvailable._id
+            );
+            const newPostPromise = PostSchema.findByIdAndUpdate(
+              post._id,
+              {
+                likes: post.likes.filter(
+                  (like) =>
+                    JSON.stringify(isLikeAvailable._id) !== JSON.stringify(like)
+                )
+              },
+              {
+                new: true
+              }
+            );
+            const [newPostDetails] = await Promise.all([
+              newPostPromise,
+              likePromise
+            ]);
+            const data = {
+              ...createPostDetails(newPostDetails),
+              likes: newPostDetails?.likes.length,
+              comments: newPostDetails?.comments.length,
+              is_like_by_user: false
+            };
+
+            response = {
+              ...getResponse,
+              data
+            };
+          } else {
+            response = {
+              ...badRequestResponse,
+              message: "You haven't like this post"
+            };
+          }
+        } catch (error) {}
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  createCommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const post = await validatePost(req, res);
+
+      if (post) {
+        const body = req.body;
+
+        const error = validateValues(body, {
+          comment: {
+            required: true,
+            message: "Please provide your comment"
+          }
+        });
+
+        if (error) {
+          response = {
+            ...badRequestResponse,
+            message: "Please provide your comment",
+            error
+          };
+        }
+
+        if (!error) {
+          try {
+            const { comment } = req.body;
+            const commentBodyType: Omit<
+              CommentDetailsType,
+              "updated_at" | "likes" | "replies"
+            > = {
+              comment,
+              created_at: new Date(),
+              created_by: user._id,
+              post_id: post._id
+            };
+            const commentDetails = await CommentSchema.create(commentBodyType);
+            if (commentDetails) {
+              const newPost = await PostSchema.findByIdAndUpdate(
+                post._id,
+                {
+                  comments: [...post.comments, commentDetails._id]
+                },
+                {
+                  new: true
+                }
+              );
+              const data = {
+                ...createPostDetails(newPost),
+                likes: newPost?.likes?.length,
+                comments: newPost?.comments?.length
+              };
+
+              response = {
+                ...getResponse,
+                data
+              };
+            }
+          } catch (error) {}
+        }
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  getCommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
 
     res.status(response.status).json(response);
   };

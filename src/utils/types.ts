@@ -65,17 +65,19 @@ export interface PostDetailsType {
   files: string[];
   created_at: Date;
   created_by: Types.ObjectId;
+  updated_at: Date;
   tags: string[];
-  comments: string[];
-  likes: string[];
+  comments: Types.ObjectId[];
+  likes: Types.ObjectId[];
 }
 export interface CommentDetailsType {
   comment: string;
   created_at: Date;
+  updated_at: Date;
   created_by: Types.ObjectId;
   post_id: Types.ObjectId;
-  likes: string[];
-  replies: string[];
+  likes: Types.ObjectId[];
+  replies: Types.ObjectId[];
 }
 export interface LikeDetailsType {
   post_id: Types.ObjectId;

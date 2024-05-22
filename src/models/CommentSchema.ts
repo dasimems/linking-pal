@@ -10,6 +10,7 @@ const Schema = mongoose.Schema;
 const Comment = new Schema<IComment>({
   post_id: { required: true, type: "ObjectId" },
   created_at: { type: Date, default: new Date() },
+  updated_at: { type: Date, default: null },
   created_by: { required: true, type: "ObjectId" },
   comment: {
     required: true,
@@ -17,11 +18,11 @@ const Comment = new Schema<IComment>({
   },
   likes: {
     default: [],
-    type: [String]
+    type: ["ObjectId"]
   },
   replies: {
     default: [],
-    type: [String]
+    type: ["ObjectId"]
   }
 });
 
