@@ -338,14 +338,16 @@ export const getPostController: ControllerType = async (req, res) => {
       const post = await validatePost(req, res);
 
       if (post) {
-        if (post.created_by !== user._id) {
+        const createdBy = JSON.stringify(post.created_by);
+        const userId = JSON.stringify(user._id);
+        if (createdBy !== userId) {
           response = {
             ...forbiddenResponse,
             message: "Unknown request"
           };
         }
 
-        if (post.created_by === user._id) {
+        if (createdBy === userId) {
           try {
             const _ = await PostSchema.findByIdAndDelete(post._id, {
               new: true
