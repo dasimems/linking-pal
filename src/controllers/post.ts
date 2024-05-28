@@ -356,12 +356,16 @@ export const getPostController: ControllerType = async (req, res) => {
             });
             const deleteCommentsRelatedToIt = Promise.all(
               post.comments.map((comment) =>
-                CommentSchema.findByIdAndDelete(comment._id)
+                CommentSchema.findByIdAndDelete(comment)
               )
             );
-            const [_, __] = await Promise.all([
+            const deleteLikesRelatedToIt = Promise.all(
+              post.likes.map((like) => CommentSchema.findByIdAndDelete(like))
+            );
+            const [_, __, ___] = await Promise.all([
               deletePostPromise,
-              deleteCommentsRelatedToIt
+              deleteCommentsRelatedToIt,
+              deleteLikesRelatedToIt
             ]);
             response = {
               ...processedResponse,
@@ -1156,13 +1160,17 @@ export const getPostController: ControllerType = async (req, res) => {
               }
             );
             const deleteCommentsRelatedToIt = Promise.all(
-              comment.replies.map((comment) =>
-                CommentSchema.findByIdAndDelete(comment._id)
+              comment.replies.map((reply) =>
+                CommentSchema.findByIdAndDelete(reply)
               )
             );
-            const [_, __] = await Promise.all([
+            const deleteLikesRelatedToIt = Promise.all(
+              comment.likes.map((like) => CommentSchema.findByIdAndDelete(like))
+            );
+            const [_, __, ___] = await Promise.all([
               deleteCommentPromise,
-              deleteCommentsRelatedToIt
+              deleteCommentsRelatedToIt,
+              deleteLikesRelatedToIt
             ]);
             response = {
               ...processedResponse,
