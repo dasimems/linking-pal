@@ -74,3 +74,6 @@ export interface PostBodyType {
   text: string;
   tags: string[];
 }
+export interface CommentBodyType {
+  comment: string;
+}

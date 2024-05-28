@@ -1,6 +1,7 @@
 import multer from "multer";
 import {
   AuthorDetailsResponseType,
+  CommentBodyType,
   CommentDetailsResponseType,
   LikeDetailsResponseType,
   PostBodyType,
@@ -15,6 +16,7 @@ import {
   createLikeDetails,
   getCloudinaryPublicId,
   getFileRoute,
+  validateComment,
   validatePost,
   validateUser,
   validateValues
@@ -86,7 +88,7 @@ export const getPostController: ControllerType = async (req, res) => {
 
         response = {
           ...getResponse,
-          data: formatedPost,
+          data: formatedPost.reverse(),
           total: postList.length
         };
       } catch (error) {
@@ -150,7 +152,7 @@ export const getPostController: ControllerType = async (req, res) => {
 
         response = {
           ...getResponse,
-          data: formatedPost,
+          data: formatedPost.reverse(),
           total: postList.length
         };
       } catch (error) {
@@ -349,9 +351,18 @@ export const getPostController: ControllerType = async (req, res) => {
 
         if (createdBy === userId) {
           try {
-            const _ = await PostSchema.findByIdAndDelete(post._id, {
+            const deletePostPromise = PostSchema.findByIdAndDelete(post._id, {
               new: true
             });
+            const deleteCommentsRelatedToIt = Promise.all(
+              post.comments.map((comment) =>
+                CommentSchema.findByIdAndDelete(comment._id)
+              )
+            );
+            const [_, __] = await Promise.all([
+              deletePostPromise,
+              deleteCommentsRelatedToIt
+            ]);
             response = {
               ...processedResponse,
               message: "Post deleted successfully"
@@ -416,16 +427,22 @@ export const getPostController: ControllerType = async (req, res) => {
             data = {
               ...data,
               created_by: createAuthorDetails(authorDetails),
-              likes: likeDetails.map((like, index) => ({
-                ...createLikeDetails(like),
-                created_by: createAuthorDetails(likeAuthors[index] || null)
-              })),
-              comments: commentDetails.map((comment, index) => ({
-                ...createCommentDetails(comment),
-                created_by: createAuthorDetails(commentAuthors[index] || null),
-                replies: comment?.replies?.length,
-                likes: comment?.likes?.length
-              })),
+              likes: likeDetails
+                .map((like, index) => ({
+                  ...createLikeDetails(like),
+                  created_by: createAuthorDetails(likeAuthors[index] || null)
+                }))
+                .reverse(),
+              comments: commentDetails
+                .map((comment, index) => ({
+                  ...createCommentDetails(comment),
+                  created_by: createAuthorDetails(
+                    commentAuthors[index] || null
+                  ),
+                  replies: comment?.replies?.length,
+                  likes: comment?.likes?.length
+                }))
+                .reverse(),
               is_like_by_user: isLikeAvailable ? true : false
             } as unknown as PostDetailsResponseType & {
               created_by: AuthorDetailsResponseType;
@@ -612,11 +629,6 @@ export const getPostController: ControllerType = async (req, res) => {
       const post = await validatePost(req, res);
 
       if (post) {
-        const likeBody = {
-          post_id: post._id,
-          created_at: new Date(),
-          created_by: user._id
-        };
         try {
           const availableLikes = await Promise.all(
             post.likes.map((id) => LikeSchema.findById(id))
@@ -724,16 +736,74 @@ export const getPostController: ControllerType = async (req, res) => {
                   new: true
                 }
               );
-              const data = {
-                ...createPostDetails(newPost),
-                likes: newPost?.likes?.length,
-                comments: newPost?.comments?.length
-              };
 
-              response = {
-                ...getResponse,
-                data
-              };
+              if (newPost) {
+                const authorPromise = UserSchema.findById(post.created_by);
+                const commentPromise = Promise.all(
+                  newPost.comments.map((id) => CommentSchema.findById(id))
+                );
+                const likePromise = Promise.all(
+                  newPost.likes.map((id) => LikeSchema.findById(id))
+                );
+                const [authorDetails, commentsFromDB, likeDetails] =
+                  await Promise.all([
+                    authorPromise,
+                    commentPromise,
+                    likePromise
+                  ]);
+                const isLikeAvailable = likeDetails.find(
+                  (like) =>
+                    JSON.stringify(like?.created_by) ===
+                    JSON.stringify(user._id)
+                );
+                const commentAuthorsPromise = Promise.all(
+                  commentsFromDB.map((comment) =>
+                    comment?.created_by
+                      ? UserSchema.findById(comment?.created_by)
+                      : undefined
+                  )
+                );
+                const likeAuthorsPromise = Promise.all(
+                  likeDetails.map((like) =>
+                    like?.created_by
+                      ? UserSchema.findById(like?.created_by)
+                      : undefined
+                  )
+                );
+
+                const [commentAuthors, likeAuthors] = await Promise.all([
+                  commentAuthorsPromise,
+                  likeAuthorsPromise
+                ]);
+                const data = {
+                  ...createPostDetails(newPost),
+                  created_by: createAuthorDetails(authorDetails),
+                  likes: likeDetails
+                    .map((like, index) => ({
+                      ...createLikeDetails(like),
+                      created_by: createAuthorDetails(
+                        likeAuthors[index] || null
+                      )
+                    }))
+                    .reverse(),
+                  comments: commentsFromDB
+                    .map((comment, index) => ({
+                      ...createCommentDetails(comment),
+                      created_by: createAuthorDetails(
+                        commentAuthors[index] || null
+                      ),
+                      replies: comment?.replies?.length,
+                      likes: comment?.likes?.length
+                    }))
+                    .reverse(),
+                  is_like_by_user: isLikeAvailable ? true : false
+                };
+
+                response = {
+                  ...getResponse,
+                  data
+                };
+              }
             }
           } catch (error) {}
         }
@@ -750,6 +820,364 @@ export const getPostController: ControllerType = async (req, res) => {
     let response = {
       ...internalServerResponse
     };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const post = await validatePost(req, res);
+
+      if (post) {
+        const comments = await CommentSchema.find({
+          post_id: post._id
+        });
+        const authorPromise = Promise.all(
+          comments.map((comment) => UserSchema.findById(comment.created_by))
+        );
+        const repliesPromise = Promise.all(
+          comments.map(({ replies }) =>
+            Promise.all(replies.map((reply) => CommentSchema.findById(reply)))
+          )
+        );
+        const likePromise = Promise.all(
+          comments.map(({ likes }) =>
+            Promise.all(likes.map((like) => LikeSchema.findById(like)))
+          )
+        );
+
+        const [authorDetails, repliesDetails, likeDetails] = await Promise.all([
+          authorPromise,
+          repliesPromise,
+          likePromise
+        ]);
+        const data = comments
+          .map((comment, index) => ({
+            ...createCommentDetails(comment),
+            created_by: createAuthorDetails(authorDetails[index]),
+            likes: comment.likes.length,
+            replies: repliesDetails[index].map((reply) => ({
+              ...createCommentDetails(reply)
+            })),
+            is_liked_by_user: likeDetails[index].find(
+              (like) =>
+                JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+            )
+              ? true
+              : false
+          }))
+          .reverse();
+        response = {
+          ...getResponse,
+          data,
+          total: comments.length
+        };
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  getSingleCommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const comment = await validateComment(req, res);
+
+      if (comment) {
+        response = {
+          ...getResponse,
+          data: {
+            ...createCommentDetails(comment),
+            likes: comment.likes.length,
+            replies: comment.replies.length
+          }
+        };
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  likeACommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const comment = await validateComment(req, res);
+
+      if (comment) {
+        const likeBody = {
+          post_id: comment._id,
+          created_at: new Date(),
+          created_by: user._id
+        };
+
+        try {
+          const availableLikes = await Promise.all(
+            comment.likes.map((id) => LikeSchema.findById(id))
+          );
+
+          const isLikeAvailable = availableLikes.find(
+            (like) =>
+              JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+          );
+
+          if (isLikeAvailable) {
+            response = {
+              ...badRequestResponse,
+              message: "You already liked this comment"
+            };
+          } else {
+            const likeDetails = await LikeSchema.create(likeBody);
+            const newCommentDetails = await CommentSchema.findByIdAndUpdate(
+              comment._id,
+              {
+                likes: [...comment.likes, likeDetails._id]
+              },
+              {
+                new: true
+              }
+            );
+            const data = {
+              ...createCommentDetails(newCommentDetails),
+              likes: newCommentDetails?.likes.length,
+              replies: newCommentDetails?.replies.length,
+              is_like_by_user: true
+            };
+
+            response = {
+              ...getResponse,
+              data
+            };
+          }
+        } catch (error) {}
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  disLikeACommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const comment = await validateComment(req, res);
+
+      if (comment) {
+        try {
+          const availableLikes = await Promise.all(
+            comment.likes.map((id) => LikeSchema.findById(id))
+          );
+
+          const isLikeAvailable = availableLikes.find(
+            (like) =>
+              JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+          );
+
+          if (isLikeAvailable) {
+            const likePromise = LikeSchema.findByIdAndDelete(
+              isLikeAvailable._id
+            );
+            const newPostPromise = CommentSchema.findByIdAndUpdate(
+              comment._id,
+              {
+                likes: comment.likes.filter(
+                  (like) =>
+                    JSON.stringify(isLikeAvailable._id) !== JSON.stringify(like)
+                )
+              },
+              {
+                new: true
+              }
+            );
+            const [newCommentDetails] = await Promise.all([
+              newPostPromise,
+              likePromise
+            ]);
+            const data = {
+              ...createCommentDetails(newCommentDetails),
+              likes: newCommentDetails?.likes.length,
+              replies: newCommentDetails?.replies.length,
+              is_like_by_user: false
+            };
+
+            response = {
+              ...getResponse,
+              data
+            };
+          } else {
+            response = {
+              ...badRequestResponse,
+              message: "You haven't like this comment"
+            };
+          }
+        } catch (error) {}
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  editACommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const body = req.body as CommentBodyType;
+
+    const user = await validateUser(req, res);
+
+    const errors = validateValues(body, {
+      comment: {
+        required: {
+          value: true,
+          message: "Please provide comment to update"
+        }
+      }
+    });
+
+    if (user) {
+      const comment = await validateComment(req, res);
+
+      if (comment) {
+        if (errors) {
+          response = {
+            ...badRequestResponse,
+            message: "Please provide comment to update",
+            error: errors
+          };
+        }
+
+        if (!errors) {
+          const { comment: sentComment } = body;
+          const createdBy = JSON.stringify(comment.created_by);
+          const userId = JSON.stringify(user._id);
+
+          if (createdBy !== userId) {
+            response = {
+              ...forbiddenResponse,
+              message: "Unknown request"
+            };
+          }
+
+          if (createdBy === userId) {
+            try {
+              const availableLikesPromise = Promise.all(
+                comment.likes.map((id) => LikeSchema.findById(id))
+              );
+
+              const newPostPromise = CommentSchema.findByIdAndUpdate(
+                comment._id,
+                {
+                  comment: sentComment,
+                  updated_at: new Date()
+                },
+                { new: true }
+              );
+
+              const [newCommentDetails, availableLikes] = await Promise.all([
+                newPostPromise,
+                availableLikesPromise
+              ]);
+
+              const isLikeAvailable = availableLikes.find(
+                (like) =>
+                  JSON.stringify(like?.created_by) === JSON.stringify(user._id)
+              );
+              const commentDetails = createCommentDetails(newCommentDetails);
+              response = {
+                ...getResponse,
+                data: {
+                  ...commentDetails,
+                  likes: newCommentDetails?.likes.length,
+                  replies: newCommentDetails?.replies.length,
+                  is_like_by_user: isLikeAvailable ? true : false
+                }
+              };
+            } catch (error) {}
+          }
+        }
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+
+    res.status(response.status).json(response);
+  },
+  deleteACommentController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const comment = await validateComment(req, res);
+
+      if (comment) {
+        const createdBy = JSON.stringify(comment.created_by);
+        const userId = JSON.stringify(user._id);
+        if (createdBy !== userId) {
+          response = {
+            ...forbiddenResponse,
+            message: "Unknown request"
+          };
+        }
+
+        if (createdBy === userId) {
+          try {
+            const deleteCommentPromise = CommentSchema.findByIdAndDelete(
+              comment._id,
+              {
+                new: true
+              }
+            );
+            const deleteCommentsRelatedToIt = Promise.all(
+              comment.replies.map((comment) =>
+                CommentSchema.findByIdAndDelete(comment._id)
+              )
+            );
+            const [_, __] = await Promise.all([
+              deleteCommentPromise,
+              deleteCommentsRelatedToIt
+            ]);
+            response = {
+              ...processedResponse,
+              message: "Comment deleted successfully"
+            };
+          } catch (error) {}
+        }
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
 
     res.status(response.status).json(response);
   };

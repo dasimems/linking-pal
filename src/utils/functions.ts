@@ -34,7 +34,7 @@ import PostSchema, { IPost } from "../models/PostSchema";
 import NotificationSchema, {
   INotification
 } from "../models/NotificationSchema";
-import { IComment } from "../models/CommentSchema";
+import CommentSchema, { IComment } from "../models/CommentSchema";
 import { ILike } from "../models/LikesSchema";
 
 dotenv.config();
@@ -288,7 +288,6 @@ export const validateUser = async (
 
 export const validatePost = async (req: Request, res: Response) => {
   const { id } = req.params;
-  console.log(id);
 
   let response = {
     ...internalServerResponse,
@@ -322,6 +321,48 @@ export const validatePost = async (req: Request, res: Response) => {
     response = {
       ...badRequestResponse,
       message: "Post id not found"
+    };
+    res.status(response.status).json(response);
+    return;
+  }
+};
+
+export const validateComment = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  console.log(id);
+
+  let response = {
+    ...internalServerResponse,
+    message: "Something went wrong!"
+  };
+
+  if (id) {
+    try {
+      const commentDetails = await CommentSchema.findById(id);
+      if (commentDetails) {
+        return commentDetails;
+      } else {
+        response = {
+          ...notFoundResponse,
+          message: "Comment doesn't exist or is deleted"
+        };
+        res.status(response.status).json(response);
+        return;
+      }
+    } catch (error: any) {
+      if (error?.message) {
+        response = {
+          ...response,
+          message: error?.message
+        };
+      }
+      res.status(response.status).send(response);
+      return;
+    }
+  } else {
+    response = {
+      ...badRequestResponse,
+      message: "Comment id not found"
     };
     res.status(response.status).json(response);
     return;
