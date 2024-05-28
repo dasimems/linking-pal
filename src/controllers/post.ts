@@ -1126,8 +1126,6 @@ export const getPostController: ControllerType = async (req, res) => {
     }
 
     res.status(response.status).json(response);
-
-    res.status(response.status).json(response);
   },
   deleteACommentController: ControllerType = async (req, res) => {
     let response = {
