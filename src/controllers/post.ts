@@ -1153,6 +1153,43 @@ export const getPostController: ControllerType = async (req, res) => {
 
         if (createdBy === userId) {
           try {
+            const postOwnerPromise = PostSchema.find();
+            const commentOwnerPromise = CommentSchema.find();
+            const [postOwnerList, commentOwnerList] = await Promise.all([
+              postOwnerPromise,
+              commentOwnerPromise
+            ]);
+            const relatedPost = postOwnerList.find((post) =>
+              post.comments
+                .map((commentId) => JSON.stringify(commentId))
+                .includes(JSON.stringify(comment._id))
+            );
+            const relatedComment = commentOwnerList.find((comment) =>
+              comment.replies
+                .map((commentId) => JSON.stringify(commentId))
+                .includes(JSON.stringify(comment._id))
+            );
+
+            if (relatedPost) {
+              const _ = await PostSchema.findByIdAndUpdate(relatedPost._id, {
+                comments: relatedPost.comments.filter(
+                  (commentId) =>
+                    JSON.stringify(commentId) !== JSON.stringify(comment._id)
+                )
+              });
+            }
+
+            if (relatedComment) {
+              const _ = await CommentSchema.findByIdAndUpdate(
+                relatedComment._id,
+                {
+                  comments: relatedComment.replies.filter(
+                    (commentId) =>
+                      JSON.stringify(commentId) !== JSON.stringify(comment._id)
+                  )
+                }
+              );
+            }
             const deleteCommentPromise = CommentSchema.findByIdAndDelete(
               comment._id,
               {

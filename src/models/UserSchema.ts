@@ -9,6 +9,9 @@ export interface IUser extends UserDocType {
   mood_last_updated: Date;
   longitude: number;
   latitude: number;
+  matches: mongoose.Types.ObjectId[];
+  match_request: mongoose.Types.ObjectId[];
+  chats: string[];
 }
 
 const Schema = mongoose.Schema;
