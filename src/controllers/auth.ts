@@ -22,6 +22,7 @@ import {
 } from "../utils/regex";
 import {
   badRequestResponse,
+  conflictResponse,
   getResponse,
   internalServerResponse,
   notFoundResponse,
@@ -202,7 +203,7 @@ export const loginController: ControllerType = async (req, res) => {
           }
         } else {
           response = {
-            ...badRequestResponse,
+            ...conflictResponse,
             message: `${
               userEmail && userMobile
                 ? "Email and mobile number"

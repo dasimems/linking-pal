@@ -66,7 +66,6 @@ export const doRequestBodyHaveError = (
     return false;
   }
 };
-
 export const validateValues: <T>(
   data: T | any,
   validation?: {
@@ -121,16 +120,6 @@ export const validateValues: <T>(
       const validationValue = validation[key];
 
       if (validationValue) {
-        console.log(
-          validationValue.maxLength &&
-            !isNaN(Number(validationValue.maxLength)) &&
-            value.toString().length < validationValue.maxLength
-        );
-        console.log(
-          validationValue?.maxLength?.value &&
-            !isNaN(Number(validationValue?.maxLength?.value)) &&
-            value.toString().length < validationValue?.maxLength?.value
-        );
         if (
           typeof validationValue !== "object" &&
           (!value || value.length < 1)
@@ -227,7 +216,6 @@ export const validateValues: <T>(
 
   return error;
 };
-
 export const validateUser = async (
   req: Request,
   res: Response,
@@ -285,7 +273,46 @@ export const validateUser = async (
     // create error log
   }
 };
+export const validateSentUserId = async (req: Request, res: Response) => {
+  const { id } = req.params;
 
+  let response = {
+    ...internalServerResponse,
+    message: "Something went wrong!"
+  };
+
+  if (id) {
+    try {
+      const userDetails = await UserSchema.findById(id);
+      if (userDetails) {
+        return userDetails;
+      } else {
+        response = {
+          ...notFoundResponse,
+          message: "User doesn't exist in our database"
+        };
+        res.status(response.status).json(response);
+        return;
+      }
+    } catch (error: any) {
+      if (error?.message) {
+        response = {
+          ...response,
+          message: error?.message
+        };
+      }
+      res.status(response.status).send(response);
+      return;
+    }
+  } else {
+    response = {
+      ...badRequestResponse,
+      message: "User id not found"
+    };
+    res.status(response.status).json(response);
+    return;
+  }
+};
 export const validatePost = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -326,10 +353,8 @@ export const validatePost = async (req: Request, res: Response) => {
     return;
   }
 };
-
 export const validateComment = async (req: Request, res: Response) => {
   const { id } = req.params;
-  console.log(id);
 
   let response = {
     ...internalServerResponse,
@@ -408,11 +433,9 @@ export const validateNotification = async (req: Request, res: Response) => {
     return;
   }
 };
-
 export const generateCacheKey = (extension: string, id: string) => {
   return `${extension}-${id}`;
 };
-
 export const createUserDetails = (
   user:
     | (IUser & {
@@ -436,6 +459,9 @@ export const createUserDetails = (
       bio: user.bio,
       dob: user.dob,
       mood: user.mood,
+      gender: user.gender,
+      longitude: user.longitude,
+      latitude: user.latitude,
       mobile_number: user.mobile_number
     };
   }
@@ -554,16 +580,14 @@ export const calculateDistanceBetweenTwoPoints = (
   }
 
   const lat1 = parseFloat(coords1.latitude);
-  const lon1 = parseFloat(coords1.latitude);
-  const lat2 = parseFloat(coords2.longitude);
-  const lon2 = parseFloat(coords2.latitude);
+  const lon1 = parseFloat(coords1.longitude);
+  const lat2 = parseFloat(coords2.latitude);
+  const lon2 = parseFloat(coords2.longitude);
 
-  const R = 6371; // km
+  const R = 6371; // Radius of the Earth in km
 
-  const x1 = lat2 - lat1;
-  const dLat = toRad(x1);
-  const x2 = lon2 - lon1;
-  const dLon = toRad(x2);
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRad(lat1)) *
@@ -571,11 +595,9 @@ export const calculateDistanceBetweenTwoPoints = (
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c;
-
+  const d = R * c; // Distance in km
   return d;
 };
-
 export const getCloudinaryPublicId = (
   fileName: string,
   type: "video" | "image" | "post"
@@ -599,7 +621,6 @@ export const getCloudinaryPublicId = (
 
   return type ? `${folderName}/${fileName}` : "";
 };
-
 export const getFileRoute = (userId: string, fileName: string) => {
   if (userId && fileName) {
     return `${userId}/${fileName}`;
@@ -607,7 +628,6 @@ export const getFileRoute = (userId: string, fileName: string) => {
     return fileName || "";
   }
 };
-
 export const cacheEmailOTP = (otp: string, id: string) => {
   return cache.set(
     generateCacheKey(otpKeys.email, id),
@@ -624,6 +644,37 @@ export const cacheMobileNumberOTP = (otp: string, id: string) => {
     { otp },
     expiringTimes.otp
   );
+};
+
+export const calculateAge = (date: Date) => {
+  return new Date().getFullYear() - new Date(date).getFullYear();
+};
+
+export const cacheNearbyUsers = (
+  users: (IUser & {
+    _id: Types.ObjectId;
+  })[],
+  id: string
+) => {
+  return cache.set(
+    generateCacheKey(otpKeys.nearbyUsers, id),
+    users,
+    expiringTimes.nearbyUsers
+  );
+};
+
+export const fetchCachedNearbyUser = (
+  id: string
+):
+  | (IUser & {
+      _id: Types.ObjectId;
+    })[]
+  | undefined => {
+  return cache.get(generateCacheKey(otpKeys.nearbyUsers, id)) as
+    | (IUser & {
+        _id: Types.ObjectId;
+      })[]
+    | undefined;
 };
 export const fetchCachedMobileNumberOTP = (id: string) => {
   return cache.get(generateCacheKey(otpKeys.mobileNumber, id));
@@ -688,8 +739,6 @@ export const generateOTP = (length: number = 4): string => {
     const randomNumber = Math.random() * 9;
     otp = otp + Math.floor(randomNumber);
   }
-
-  console.log(parseInt("0124", 10));
 
   return otp;
 };

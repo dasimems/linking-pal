@@ -5,17 +5,23 @@ import {
   UpdateProfileBody
 } from ".";
 import UserSchema from "../models/UserSchema";
-import { ControllerType, ResponseType } from "../utils/types";
+import { ControllerType, NearbyUserType, ResponseType } from "../utils/types";
 import {
   internalServerResponse,
   getResponse,
   forbiddenResponse
 } from "../utils/responses";
 import {
+  cacheNearbyUsers,
+  calculateAge,
+  calculateDistanceBetweenTwoPoints,
   convertMinToSecs,
+  createPostDetails,
   createUserDetails,
+  fetchCachedNearbyUser,
   getCloudinaryPublicId,
   getFileRoute,
+  validateSentUserId,
   validateUser,
   validateValues
 } from "../utils/functions";
@@ -27,6 +33,7 @@ import { imageUpload, videUpload } from "../middleware/multler";
 import multer from "multer";
 import getVideoDurationInSeconds from "get-video-duration";
 import cloudinary from "../utils/cloudinary";
+import PostSchema from "../models/PostSchema";
 
 export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
@@ -55,7 +62,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
       ...internalServerResponse
     };
-    const { name, bio, dob, userId } = req.body as UpdateProfileBody;
+    const { name, bio, dob, userId, gender } = req.body as UpdateProfileBody;
     let expectedBody = {};
     let errors: { [name: string]: string } | null = null;
     if (name) {
@@ -68,6 +75,13 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
       expectedBody = {
         ...expectedBody,
         bio
+      };
+    }
+
+    if (gender) {
+      expectedBody = {
+        ...expectedBody,
+        gender: gender.toLowerCase()
       };
     }
     if (dob) {
@@ -107,7 +121,8 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
       if (Object.keys(expectedBody).length < 1) {
         response = {
           ...badRequestResponse,
-          message: "One of either values must be provided. Name, DOB, Bio"
+          message:
+            "One of either values must be provided. Name, DOB, Bio, Gender"
         };
       } else {
         expectedBody = {
@@ -117,7 +132,6 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
         try {
           const user = await validateUser(req, res, true);
           if (user) {
-            console.log(expectedBody);
             const newDetails = await UserSchema.findByIdAndUpdate(
               userId,
               {
@@ -126,8 +140,6 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               { new: true }
             );
 
-            console.log(newDetails);
-
             const userDetails = createUserDetails(newDetails);
 
             response = {
@@ -135,7 +147,7 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               message: "Update successful",
               data: userDetails
             };
-
+          } else {
             return;
           }
         } catch (error) {}
@@ -356,7 +368,6 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
 
         if (!err && req.file) {
           const { path } = req.file;
-          console.log("path", path);
           try {
             const duration = await getVideoDurationInSeconds(path);
 
@@ -384,15 +395,12 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
                 ).split(".")[0];
 
                 if (publicId) {
-                  console.log("previousId", publicId);
                   const deleting = await cloudinary.uploader.destroy(publicId, {
                     resource_type: "video",
                     invalidate: true
                   });
-                  console.log(deleting);
                 }
               }
-              console.log("fileName", userFileName);
               cloudinary.uploader.upload(
                 path,
                 {
@@ -410,7 +418,6 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
                   }
 
                   if (!err) {
-                    console.log(video);
                     const newDetails = await UserSchema.findByIdAndUpdate(
                       user.id,
                       {
@@ -500,12 +507,10 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
               ).split(".")[0];
 
               if (publicId) {
-                console.log("previousId", publicId);
                 const deleting = await cloudinary.uploader.destroy(publicId, {
                   resource_type: "image",
                   invalidate: true
                 });
-                console.log(deleting);
               }
             }
 
@@ -526,7 +531,6 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
                 }
 
                 if (!err) {
-                  console.log(image);
                   const newDetails = await UserSchema.findByIdAndUpdate(
                     user.id,
                     {
@@ -559,4 +563,134 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
     } else {
       return;
     }
+  },
+  getParticularUserDetailsController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const userDetails = await validateSentUserId(req, res);
+      if (userDetails) {
+        try {
+          const postList = await PostSchema.find({
+            created_by: userDetails._id
+          });
+          const post = postList
+            .map((post) => ({
+              ...createPostDetails(post),
+              comments: post.comments.length,
+              likes: post.likes.length
+            }))
+            .reverse();
+          const data = {
+            ...createUserDetails(userDetails),
+            post
+          };
+          response = {
+            ...getResponse,
+            data
+          };
+        } catch (error) {}
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  getNearbyUsersController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+    const query = req.query;
+
+    const user = await validateUser(req, res);
+    const { age, mood, distance, interest } =
+      query as unknown as NearbyUserType;
+
+    if (user) {
+      let maxDistance = distance ?? 10,
+        userAge = calculateAge(user.dob),
+        femaleExpectancyAge = userAge - 2,
+        maleExpectancyAge = userAge + 10,
+        maxAge =
+          age ?? user.gender === "male"
+            ? femaleExpectancyAge < 18
+              ? 18
+              : femaleExpectancyAge
+            : maleExpectancyAge < 18
+            ? 18
+            : maleExpectancyAge,
+        interestedIn = interest ?? "all",
+        filteringMood = mood ?? user.mood[0];
+      const userList = (await UserSchema.find())
+        .filter(
+          (userDetails) =>
+            JSON.stringify(userDetails._id) !== JSON.stringify(user._id)
+        )
+        .filter((userDetails) => calculateAge(userDetails.dob) <= maxAge) //filtering using max age
+        .filter(
+          (userDetails) =>
+            userDetails.mood &&
+            userDetails.mood
+              .map((mood) => mood.toLowerCase())
+              .includes(filteringMood.toLowerCase())
+        ) //filtering using mood
+        .filter((userDetails) =>
+          interestedIn === "all"
+            ? userDetails.gender
+            : userDetails.gender === interestedIn
+        ) //filtering using gender
+        .filter(
+          (userDetails) =>
+            calculateDistanceBetweenTwoPoints(
+              {
+                latitude: userDetails.latitude.toString(),
+                longitude: userDetails.longitude.toString()
+              },
+              {
+                latitude: user.latitude.toString(),
+                longitude: user.longitude.toString()
+              }
+            ) <= parseFloat(maxDistance)
+        ); //filtering by distance
+      const cachedUser = fetchCachedNearbyUser(user._id as unknown as string);
+
+      if (!user.has_subscribed) {
+        if (cachedUser) {
+          response = {
+            ...getResponse,
+            data: cachedUser.map((data) => createUserDetails(data)),
+            message: "Please subscribe to view more than 10 users per day"
+          };
+        } else {
+          const slicedData = userList.slice(0, 10);
+          const data = slicedData.map((data) => createUserDetails(data));
+          // if (slicedData.length > 9) {
+          //   cacheNearbyUsers(slicedData, user._id as unknown as string);
+          // }
+          response = {
+            ...getResponse,
+            data,
+            message: "Please subscribe to view more than 10 users per day"
+          };
+        }
+      }
+
+      if (user.has_subscribed) {
+        response = {
+          ...getResponse,
+          data: userList.map((data) => createUserDetails(data))
+        };
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
   };

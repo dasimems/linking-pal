@@ -113,7 +113,6 @@ export const sendOTPController: ControllerType = async (req, res) => {
               : await UserSchema.findOne({
                   mobile_number: mobile_number?.replace("+", "")
                 });
-            console.log(user);
             if (user) {
               const isVerified = email
                 ? user.is_email_verified
@@ -238,7 +237,6 @@ export const sendOTPController: ControllerType = async (req, res) => {
                   ? fetchCachedEmailOTP(user._id as unknown as string)
                   : fetchCachedMobileNumberOTP(user._id as unknown as string)
               ) as CachedOTPType;
-              console.log(savedOTP);
               if (savedOTP) {
                 if (savedOTP.otp === otp) {
                   response = {

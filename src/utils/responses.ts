@@ -4,6 +4,10 @@ export const badRequestResponse: ResponseType = {
   status: 400,
   message: "Bad request"
 };
+export const conflictResponse: ResponseType = {
+  status: 409,
+  message: "Conflict"
+};
 export const getResponse: ResponseType = {
   status: 200,
   message: "Successful"
@@ -36,5 +40,5 @@ export const tooManyRequestResponse: ResponseType = {
 };
 export const internalServerResponse: ResponseType = {
   status: 500,
-  message: "Internal server"
+  message: "Internal server error"
 };

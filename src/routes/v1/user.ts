@@ -1,6 +1,8 @@
 import express from "express";
 import {
   deleteUserDetailsController,
+  getNearbyUsersController,
+  getParticularUserDetailsController,
   getUserDetailsController,
   updateUserAvatarController,
   updateUserDetailsController,
@@ -16,6 +18,9 @@ userRoute
   .get(getUserDetailsController)
   .patch(updateUserDetailsController)
   .delete(deleteUserDetailsController);
+
+userRoute.route(subRoutes.nearby).get(getNearbyUsersController);
+userRoute.route("/:id").get(getParticularUserDetailsController);
 
 userRoute.route(subRoutes.mood).post(updateUserMoodController);
 userRoute.route(subRoutes.location).post(updateUserLocationController);

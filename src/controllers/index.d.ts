@@ -39,11 +39,13 @@ export interface RegisterBody {
   dob: Date;
   bio: string;
   password: string;
+  gender: string;
 }
 export interface UpdateProfileBody extends AUthorizedBody {
   name?: string;
   dob?: Date;
   bio?: string;
+  gender?: string;
 }
 
 export interface AUthorizedBody {

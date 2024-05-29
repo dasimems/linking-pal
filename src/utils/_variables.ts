@@ -2,6 +2,7 @@ import { Algorithm } from "jsonwebtoken";
 
 export const v1 = "/v1",
   v2 = "/v2",
+  hour24Milliseconds = 86400000,
   routes = {
     auth: "/auth",
     user: "/user",
@@ -50,10 +51,12 @@ export const v1 = "/v1",
     email: "email",
     mobileNumber: "mobile-number",
     forgotPassword: "forgot-password",
-    forgotPasswordToken: "forgot-password-token"
+    forgotPasswordToken: "forgot-password-token",
+    nearbyUsers: "nearby-user-key"
   },
   expiringTimes = {
-    otp: 300000
+    otp: 300000,
+    nearbyUsers: hour24Milliseconds / 1000
   },
   dbCollectionNames = {
     notification: "notification",
@@ -62,5 +65,4 @@ export const v1 = "/v1",
     like: "like",
     comment: "comment",
     chat: "chat"
-  },
-  hour24Milliseconds = 86400000;
+  };

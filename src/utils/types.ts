@@ -33,6 +33,16 @@ export interface UserDetailsType {
   is_verified: boolean;
   has_subscribed: boolean;
   avatar: string;
+  longitude: number;
+  latitude: number;
+  gender: string;
+}
+
+export interface NearbyUserType {
+  age: string;
+  mood: string;
+  distance: string;
+  interest: string;
 }
 export interface AuthorDetailsType {
   // email: string;
