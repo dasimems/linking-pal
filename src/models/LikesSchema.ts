@@ -8,9 +8,20 @@ export interface ILike extends LikeDocType {}
 const Schema = mongoose.Schema;
 
 const Like = new Schema<ILike>({
-  post_id: { required: true, type: "ObjectId" },
-  created_at: { type: Date, default: new Date() },
-  created_by: { required: true, type: "ObjectId" }
+  post_id: {
+    required: true,
+    type: "ObjectId",
+    ref: dbCollectionNames.post
+  },
+  created_at: {
+    type: Date,
+    default: new Date()
+  },
+  created_by: {
+    required: true,
+    type: "ObjectId",
+    ref: dbCollectionNames.user
+  }
 });
 
 const LikeSchema = mongoose.model<ILike>(dbCollectionNames.like, Like);

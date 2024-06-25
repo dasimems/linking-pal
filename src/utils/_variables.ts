@@ -29,7 +29,9 @@ export const v1 = "/v1",
     dislike: "/dislike",
     comment: "/comment",
     location: "/location",
-    video: "/video"
+    video: "/video",
+    match: "/match",
+    request: "/request"
   },
   cloudinaryFolderName = {
     video: "video-upload",
@@ -64,5 +66,6 @@ export const v1 = "/v1",
     user: "user",
     like: "like",
     comment: "comment",
-    chat: "chat"
+    chat: "chat",
+    match: "match"
   };

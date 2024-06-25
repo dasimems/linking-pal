@@ -9,7 +9,8 @@ import { ControllerType, NearbyUserType, ResponseType } from "../utils/types";
 import {
   internalServerResponse,
   getResponse,
-  forbiddenResponse
+  forbiddenResponse,
+  createdResponse
 } from "../utils/responses";
 import {
   cacheNearbyUsers,
@@ -34,6 +35,7 @@ import multer from "multer";
 import getVideoDurationInSeconds from "get-video-duration";
 import cloudinary from "../utils/cloudinary";
 import PostSchema from "../models/PostSchema";
+import MatchRequestSchema from "../models/MatchRequestScheme";
 
 export const getUserDetailsController: ControllerType = async (req, res) => {
     let response = {
@@ -687,6 +689,205 @@ export const getUserDetailsController: ControllerType = async (req, res) => {
           ...getResponse,
           data: userList.map((data) => createUserDetails(data))
         };
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  getMatchesController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      try {
+        const matches = await MatchRequestSchema.find({
+          $or: [{ receiver_id: user._id }, { sender_id: user._id }],
+          is_accepted: true
+        });
+        const data = (
+          await Promise.all(
+            matches.map((match) => UserSchema.findById(match.sender_id))
+          )
+        ).map((user, index) => ({
+          ...createUserDetails(user),
+          accepted_on: matches[index].accepted_at
+        }));
+
+        response = {
+          ...getResponse,
+          data
+        };
+      } catch (error) {}
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  getMatchRequestController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const matches = await MatchRequestSchema.find({
+        receiver_id: user._id,
+        is_accepted: false
+      });
+      const data = (
+        await Promise.all(
+          matches.map((match) => UserSchema.findById(match.sender_id))
+        )
+      ).map((user, index) => ({
+        ...createUserDetails(user),
+        created_at: matches[index]?.created_at ?? null
+      }));
+
+      response = {
+        ...getResponse,
+        data
+      };
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  sendMatchRequestController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const sender = await validateUser(req, res);
+
+    if (sender) {
+      const receiverDetails = await validateSentUserId(req, res);
+
+      if (receiverDetails) {
+        if (
+          JSON.stringify(receiverDetails._id) === JSON.stringify(sender._id)
+        ) {
+          response = {
+            ...badRequestResponse,
+            message: "Sorry you can't sent a request to yourself"
+          };
+        }
+        if (
+          JSON.stringify(receiverDetails._id) !== JSON.stringify(sender._id)
+        ) {
+          const hasSentRequest = await MatchRequestSchema.find({
+            $and: [
+              {
+                $or: [
+                  {
+                    receiver_id: receiverDetails._id,
+                    sender_id: sender._id
+                  },
+                  {
+                    sender_id: receiverDetails._id,
+                    receiver_id: sender._id
+                  }
+                ]
+              },
+              { $or: [{ is_accepted: true }, { is_accepted: false }] }
+            ]
+          });
+
+          if (hasSentRequest.length > 0) {
+            const request = hasSentRequest[0];
+            response = {
+              ...badRequestResponse,
+              message:
+                JSON.stringify(request.sender_id) === JSON.stringify(sender._id)
+                  ? `You already sent ${receiverDetails.name} a request`
+                  : ` ${receiverDetails.name} already sent you a request`
+            };
+          }
+
+          if (hasSentRequest.length < 1) {
+            const match = await MatchRequestSchema.create({
+              receiver_id: receiverDetails.id,
+              sender_id: sender._id
+            });
+
+            if (match) {
+              response = {
+                ...createdResponse,
+                message: `Match request sent to ${receiverDetails.name} sucessfully`
+              };
+            }
+          }
+        }
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    res.status(response.status).json(response);
+  },
+  acceptMatchRequestController: ControllerType = async (req, res) => {
+    let response = {
+      ...internalServerResponse
+    };
+
+    const user = await validateUser(req, res);
+
+    if (user) {
+      const senderDetails = await validateSentUserId(req, res);
+
+      if (senderDetails) {
+        const matchRequestDetails = await MatchRequestSchema.find({
+          receiver_id: user.id,
+          sender_id: senderDetails.id
+        });
+
+        if (matchRequestDetails.length > 0) {
+          const [matchRequest] = matchRequestDetails;
+          if (matchRequest.is_accepted) {
+            response = {
+              ...badRequestResponse,
+              message: "Already accepted"
+            };
+          }
+
+          if (!matchRequest.is_accepted) {
+            const updatedMatchRequest =
+              await MatchRequestSchema.findByIdAndUpdate(
+                matchRequest._id,
+                {
+                  is_accepted: true,
+                  accepted_at: new Date()
+                },
+                {
+                  new: true
+                }
+              );
+
+            if (updatedMatchRequest) {
+              response = {
+                ...processedResponse
+              };
+            }
+          }
+        }
+
+        if (matchRequestDetails.length < 1) {
+          response = {
+            ...badRequestResponse,
+            message: "Can't find match request"
+          };
+        }
+      } else {
+        return;
       }
     } else {
       return;

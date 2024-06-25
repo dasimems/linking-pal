@@ -25,11 +25,13 @@ const Notification = new Schema<INotification>({
   },
   initiator_id: {
     type: "ObjectId",
-    required: true
+    required: true,
+    ref: dbCollectionNames.user
   },
   receiver_id: {
     type: "ObjectId",
-    required: true
+    required: true,
+    ref: dbCollectionNames.user
   },
   action_performed: {
     type: String,

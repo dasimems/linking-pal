@@ -94,6 +94,13 @@ export interface LikeDetailsType {
   created_at: Date;
   created_by: Types.ObjectId;
 }
+export interface MatchRequestDetailsType {
+  sender_id: Types.ObjectId;
+  receiver_id: Types.ObjectId;
+  created_at: Date;
+  is_accepted: boolean;
+  accepted_at: Date;
+}
 
 export interface TokenType {
   userId?: string;

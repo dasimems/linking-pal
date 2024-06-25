@@ -26,7 +26,8 @@ const Post = new Schema<IPost>({
   },
   created_by: {
     type: "ObjectId",
-    required: true
+    required: true,
+    ref: dbCollectionNames.user
   },
   tags: {
     type: [String],
@@ -34,11 +35,13 @@ const Post = new Schema<IPost>({
   },
   comments: {
     type: ["ObjectId"],
-    default: []
+    default: [],
+    ref: dbCollectionNames.comment
   },
   likes: {
     type: ["ObjectId"],
-    default: []
+    default: [],
+    ref: dbCollectionNames.like
   }
 });
 

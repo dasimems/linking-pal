@@ -259,6 +259,7 @@ export const validateUser = async (
       return;
     }
   } catch (error: any) {
+    console.log(error)
     if (error?.message) {
       response = {
         ...response,
