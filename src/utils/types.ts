@@ -102,6 +102,33 @@ export interface MatchRequestDetailsType {
   accepted_at: Date;
 }
 
+export interface ChatUserType {
+  user_id: Types.ObjectId;
+}
+
+export interface ChannelUsersType extends ChatUserType {
+  joined_at: Date;
+}
+export interface ChatSeenUsersType extends ChatUserType {
+  seen_at: Date;
+}
+
+export interface ChatChannelDetailsType {
+  channel: string;
+  users: ChannelUsersType[];
+  created_at: Date;
+}
+
+export interface ChatDetailsType {
+  channel: string;
+  users: ChannelUsersType[];
+  created_at: Date;
+  message: string;
+  files: string[];
+  sender_id: Types.ObjectId;
+  seen_by: ChatSeenUsersType[];
+}
+
 export interface TokenType {
   userId?: string;
   userType?: string;

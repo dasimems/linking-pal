@@ -67,5 +67,6 @@ export const v1 = "/v1",
     like: "like",
     comment: "comment",
     chat: "chat",
-    match: "match"
+    match: "match",
+    chatChannel: "chat-channel"
   };

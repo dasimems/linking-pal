@@ -7,9 +7,7 @@ export interface IUser extends UserDocType {
   password: string;
   referred_by: string | null;
   mood_last_updated: Date;
-  chats: string[];
   blocked: mongoose.Types.ObjectId[];
-  requests: mongoose.Types.ObjectId[];
 }
 
 const Schema = mongoose.Schema;
@@ -73,15 +71,6 @@ const User = new Schema<IUser>({
     type: [mongoose.Types.ObjectId],
     default: [],
     ref: dbCollectionNames.user
-  },
-  requests: {
-    type: [mongoose.Types.ObjectId],
-    default: [],
-    ref: dbCollectionNames.user
-  },
-  chats: {
-    type: [String],
-    default: []
   },
   gender: {
     type: String,
