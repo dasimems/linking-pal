@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 // import { jwtAlgo } from "./variable";
 import {
+  ChatChannelDetailsType,
+  ChatDetailsType,
   CommentDetailsType,
   NotificationDetailsType,
   OTPTokenType,
@@ -36,6 +38,8 @@ import NotificationSchema, {
 } from "../models/NotificationSchema";
 import CommentSchema, { IComment } from "../models/CommentSchema";
 import { ILike } from "../models/LikesSchema";
+import { IChannel } from "../models/ChatChannelSchema";
+import { IChat } from "../models/ChatSchema";
 
 dotenv.config();
 const env = process.env;
@@ -259,7 +263,7 @@ export const validateUser = async (
       return;
     }
   } catch (error: any) {
-    console.log(error)
+    console.log(error);
     if (error?.message) {
       response = {
         ...response,
@@ -491,6 +495,41 @@ export const createAuthorDetails = (
       // dob: user.dob,
       mood: user.mood
       // mobile_number: user.mobile_number
+    };
+  }
+};
+export const createChannelDetails = (
+  channel:
+    | (IChannel & {
+        _id: Types.ObjectId;
+      })
+    | null
+): ChatChannelDetailsType | undefined => {
+  if (channel) {
+    return {
+      created_at: channel.created_at,
+      is_grouped: channel.is_grouped,
+      users: channel.users,
+      group_name: channel.group_name
+    };
+  }
+};
+export const createChatDetails = (
+  chat:
+    | (IChat & {
+        _id: Types.ObjectId;
+      })
+    | null
+): ChatDetailsType | undefined => {
+  if (chat) {
+    return {
+      created_at: chat.created_at,
+      users: chat.users,
+      message: chat.message,
+      files: chat.files,
+      sender_id: chat.sender_id,
+      channel: chat.channel,
+      updated_at: chat.updated_at
     };
   }
 };

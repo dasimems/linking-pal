@@ -108,25 +108,28 @@ export interface ChatUserType {
 
 export interface ChannelUsersType extends ChatUserType {
   joined_at: Date;
+  left_at: Date;
 }
 export interface ChatSeenUsersType extends ChatUserType {
   seen_at: Date;
+  deleted_at: Date;
 }
 
 export interface ChatChannelDetailsType {
-  channel: string;
   users: ChannelUsersType[];
   created_at: Date;
+  is_grouped: boolean;
+  group_name: string;
 }
 
 export interface ChatDetailsType {
-  channel: string;
-  users: ChannelUsersType[];
+  channel: Types.ObjectId;
+  users: ChatSeenUsersType[];
   created_at: Date;
+  updated_at: Date;
   message: string;
   files: string[];
   sender_id: Types.ObjectId;
-  seen_by: ChatSeenUsersType[];
 }
 
 export interface TokenType {

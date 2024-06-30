@@ -5,4 +5,5 @@ export const phoneNumberRegExp = /^\+?[0-9]+\s?[0-9\s.()-]{8,}$/,
   passwordRegExp =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&()])[A-Za-z\d@$!%*?&()]{8,}$/,
   dateRegExp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/,
-  coordinateRegExp = /^(-?\d+(\.\d+)?)$/;
+  coordinateRegExp = /^(-?\d+(\.\d+)?)$/,
+  imageRegExp = /^(https?:\/\/.*)(\.(?:png|jpg|jpeg|gif|bmp|webp|svg))?$/i;
