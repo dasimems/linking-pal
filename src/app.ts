@@ -35,6 +35,7 @@ mongoose
 
 app.use(routes);
 app.use("/admin", express.static(path.join(__dirname, "..", "web")));
+console.log(path.join(__dirname, "..", "web", "error-logs"));
 
 export let allConnectedSocket: {
   [userId: string]: {
@@ -46,6 +47,15 @@ export const io = new Server(httpServer, {
   /* options */
 });
 io.use(validateSocketUser);
+io.engine.on("connection_error", (err) => {
+  console.log("Request error"); // the request object
+  console.log(err.req); // the request object
+  console.log("Code error"); // the error code, for example 1
+  console.log(err.code); // the error code, for example 1
+  console.log("Message error"); // the error message, for example "Session ID unknown"
+  console.log("Context error"); // some additional error context
+  console.log(err.context); // some additional error context
+});
 io.on("connection", (socket: Socket & { user?: any }) => {
   const user = socket?.user;
 
@@ -72,6 +82,20 @@ io.on("connection", (socket: Socket & { user?: any }) => {
         newConnection[key] = userConnectedSockets[key];
       });
       allConnectedSocket[JSON.stringify(user?.id)] = newConnection;
+    });
+
+    socket.on("connect_error", (err) => {
+      // the reason of the error, for example "xhr poll error"
+      console.log("Socket message error");
+      console.log(err.message);
+
+      // some additional description, for example the status code of the initial HTTP response
+      console.log("Socket description error");
+      console.log(err.description);
+
+      // some additional context, for example the XMLHttpRequest object
+      console.log("Socket context error");
+      console.log(err.context);
     });
   }
   if (!user) {
