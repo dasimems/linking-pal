@@ -15,10 +15,12 @@
   "license": "ISC",
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/connect-livereload": "^0.6.3",
     "@types/express": "^4.17.21",
     "@types/express-ejs-layouts": "^2.5.4",
     "@types/express-session": "^1.18.0",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/livereload": "^0.9.5",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.12.5",
     "@types/nodemailer": "^6.4.14",
