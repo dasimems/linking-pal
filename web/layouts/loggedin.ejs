@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    
+    <link rel="stylesheet" href="/styles/index.css" />
+    <script
+  src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"
+></script>
+<script >
+   function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const day = String(date.getDate()).padStart(2, '0');
+            let hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'pm' : 'am';
+
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+
+            return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
+        }
+</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  </head>
+  <body class="bg-primary-50">
+
+    <div class="flex items-start gap-10 p-5 ">
+
+      <div class="sticky left-0 top-5 flex flex-col gap-10 justify-between min-w-[16rem] h-[calc(100vh-2.5rem)]">
+
+        <div class="flex flex-col gap-10">
+
+          <h1 class="text-xl font-bold">Linking pal</h1>
+  
+          <ul class="flex flex-col gap-6">
+            <li class="px-5 py-3 rounded-md <%= activeUrl === "/admin"? "bg-white " : ""  %>"><a href="/admin" class="inline-flex items-center w-full gap-2"><i class="fas fa-home-alt"></i> Dashboard</a></li>
+            <li class="px-5 py-3 rounded-md <%= activeUrl === "/admin/users"? "bg-white " : ""  %>"><a href="/admin/users" class="inline-flex items-center w-full gap-2"><i class="fa-solid fa-user"></i> Users</a></li>
+            <li class="px-5 py-3 rounded-md <%= activeUrl === "/admin/post"? "bg-white " : ""  %>"><a href="/admin/post" class="inline-flex items-center w-full gap-2"><i class="fa-solid fa-file-lines"></i> Posts</a></li>
+          </ul>
+        </div>
+
+        <a href="/admin/logout" class="inline-flex justify-center w-full gap-2 px-5 py-3 font-medium text-center text-white rounded-md bg-primary">
+          
+          <span><i class="fa-solid fa-right-from-bracket"></i></span>
+          <span>Log out</span></a>
+  
+  
+      </div>
+  
+      <div class="flex flex-col flex-1 min-h-[calc(100vh-2.5rem)] gap-6 p-5 md:-10 bg-white rounded-2xl">
+        <%- body %>
+      </div>
+    </div>
+    
+  </body>
+</html>

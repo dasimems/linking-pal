@@ -1,0 +1,7 @@
+<% let typeClassName = "bg-white text-primary"; switch(buttonType){ case
+"primary": typeClassName="bg-primary text-white"; break; default: break; } %>
+<button
+  class="px-5 py-3 rounded-md hover:shadow-md <%= typeClassName %> <%= className %>"
+>
+  <%= text ?? children ?? "Submit" %>
+</button>

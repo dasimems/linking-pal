@@ -1,0 +1,57 @@
+<% function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const day = String(date.getDate()).padStart(2, '0');
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+
+    return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
+} %>
+<div class="flex flex-col gap-6">
+    <div class="flex items-center justify-between">
+        <h1 class="font-medium">Posts</h1>
+        <% if(!removeSeeAll){ %>
+        <a href="<%= variables.routes.admin %><%= variables.routes.post %>" class="underline">See all</a>
+        <% } %>
+    </div>
+    <% if (posts && Array.isArray(posts)) { %>
+        <% for (let index = 0; index < (max || posts.length); index++) { %>
+          <% let data = posts[index]; %>
+    <div class="flex gap-10 py-3 overflow-hidden border-b">
+        <div class="relative w-32 overflow-hidden rounded-md h-36 bg-slate-200">
+
+            <img src="<%= data?.post?.files? data?.post?.files[0]: "" %>" alt="image" class="absolute top-0 left-0 object-cover object-center w-full h-full" />
+        </div>
+
+        <div class="flex flex-col flex-1 gap-2">
+            <h1 class="text-lg font-medium"><%= data?.author?.name ?? "Deleted Account" %></h1>
+            <p class="text-slate-600"><%= data?.post?.text %></p>
+
+            <div class="flex items-center gap-6">
+                <div class="inline-flex items-center gap-2">
+                    <span><i class="fa-solid fa-comment"></i></span>
+                    <span><%= data?.post?.comments?.length %></span>
+                </div>
+                <div class="inline-flex items-center gap-2">
+                    <span><i class="fa-solid fa-thumbs-up"></i></span>
+                    <span><%= data?.post?.likes?.length %></span>
+                </div>
+            </div>
+            <div class="flex gap-6 mt-3">
+                <a href="<%= variables.routes.admin %><%= variables.routes.post %>/<%= data?.post?._id %>" class="px-4 py-3 text-white rounded-md bg-primary">
+                    <span>View Details</span>
+                </a>
+            </div>
+        </div>
+        <div class="items-end justify-between h-full">
+            <p class="text-sm text-slate-600"><%= formatDate(new Date(data?.post?.created_at)) %></p>
+        </div>
+    </div>
+    
+    <% } %>
+    <% } %>
+</div>

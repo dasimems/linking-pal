@@ -6,6 +6,7 @@ export const v1 = "/v1",
   routes = {
     auth: "/auth",
     user: "/user",
+    users: "/users",
     admin: "/admin",
     chat: "/chat",
     post: "/post",

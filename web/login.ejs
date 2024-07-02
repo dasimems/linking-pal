@@ -1,0 +1,13 @@
+<div class="flex items-center justify-center w-full h-screen gap-10 bg-white">
+  <div
+    class="p-6 bg-primary md:max-w-[20rem] w-[90%] rounded-md flex flex-col gap-3"
+  >
+    <h1 class="text-xl font-bold text-center text-white"><%= message ?? "Admin login" %></h1>
+    <form method="post" class="flex flex-col gap-3">
+      <%- include('./components/form/input.ejs', {placeholder:
+      "Email address"})%> <%-include('./components/form/input.ejs', {placeholder:
+      "Password", inputType: "password"} )%>
+      <%-include('./components/general/button.ejs', {className: ""}) %>
+    </form>
+  </div>
+</div>

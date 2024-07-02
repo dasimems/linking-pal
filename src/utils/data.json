@@ -1,0 +1,75 @@
+{
+  "$__": {
+    "activePaths": {
+      "paths": {
+        "created_by": "init",
+        "files": "init",
+        "text": "init",
+        "created_at": "init",
+        "updated_at": "init",
+        "tags": "init",
+        "comments": "init",
+        "likes": "init",
+        "_id": "init",
+        "__v": "init"
+      },
+      "states": {
+        "require": {},
+        "default": {},
+        "init": {
+          "_id": true,
+          "text": true,
+          "files": true,
+          "created_at": true,
+          "updated_at": true,
+          "created_by": true,
+          "tags": true,
+          "comments": true,
+          "likes": true,
+          "__v": true
+        }
+      }
+    },
+    "skipId": true
+  },
+  "$isNew": false,
+  "_doc": {
+    "_id": "6682b887195557a8fd858428",
+    "text": "let me tonight ",
+    "files": [
+      "https://res.cloudinary.com/ds5eodauf/image/upload/v1719842831/post-upload/6682b4a1195557a8fd8581b9/image-upload/scaled_1000749959.jpg"
+    ],
+    "created_at": "2024-07-01T14:09:10.752Z",
+    "updated_at": null,
+    "created_by": "6682b4a1195557a8fd8581b9",
+    "tags": [],
+    "comments": [],
+    "likes": [],
+    "__v": 0
+  },
+  "author": {
+    "_id": "6682b4a1195557a8fd8581b9",
+    "name": "beejay",
+    "mobile_number": 8101072024,
+    "longitude": 4.7599366,
+    "latitude": 7.6434245,
+    "email": "beejay@gmail.com",
+    "dob": "1997-11-30T23:00:00.000Z",
+    "bio": "beejay",
+    "password": "$2b$10$Ja3xHzV025tkP7QWh1xauOlRwtUg6v8CKJdBcFNgLYKiPbtdCwqJG",
+    "is_phone_verified": true,
+    "is_email_verified": true,
+    "has_subscribed": false,
+    "is_verified": false,
+    "mood": ["Clubbing"],
+    "blocked": [],
+    "gender": "male",
+    "video": "https://res.cloudinary.com/ds5eodauf/video/upload/v1719842063/video-upload/6682b4a1195557a8fd8581b9/1000731709.mp4",
+    "avatar": "https://res.cloudinary.com/ds5eodauf/image/upload/v1719842022/image-upload/6682b4a1195557a8fd8581b9/scaled_1000728173.jpg",
+    "created_at": "2024-07-01T13:13:05.811Z",
+    "mood_last_updated": "2024-07-01T13:54:33.163Z",
+    "updated_at": "2024-07-01T13:54:24.554Z",
+    "referred_by": null,
+    "__v": 0
+  }
+}

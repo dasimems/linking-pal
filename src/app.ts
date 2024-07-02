@@ -6,10 +6,11 @@ import mongoose from "mongoose";
 import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 import path from "path";
-import { createUserDetails, reverseToken } from "./utils/functions";
-import { OTPTokenType, TokenType } from "./utils/types";
-import UserSchema from "./models/UserSchema";
+import { createUserDetails } from "./utils/functions";
+import expressLayouts from "express-ejs-layouts";
 import { validateSocketUser } from "./middleware/socket";
+import livereload from "livereload";
+import connectLivereload from "connect-livereload";
 import {
   getMessageController,
   markMessageReadController,
@@ -17,13 +18,22 @@ import {
   sendMessageController
 } from "./controllers/chat";
 import { USER } from "./utils/enums";
+import session from "express-session";
 dotenv.config();
 
 export const app: Express = express();
 export const env = process.env;
 
-app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+  session({
+    secret: env.SECRET_KEY as string,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Use true if you are using https
+  })
+);
+app.use(bodyParser.json());
 mongoose
   .connect(env.CLOUD_CONNECTION_STRING as string)
   .then(() => {
@@ -33,9 +43,24 @@ mongoose
     console.log(err);
   });
 
+const liveReloadServer = livereload.createServer();
+liveReloadServer.watch(path.join(__dirname, "..", "web"));
+liveReloadServer.server.once("connection", () => {
+  setTimeout(() => {
+    liveReloadServer.refresh("/");
+  }, 100);
+});
+
+app.use(connectLivereload());
+app.use(expressLayouts);
+app.set("layout", "layouts/index");
+// app.use("/admin", express.static(path.join(__dirname, "..", "web")));
+
+app.use("/styles", express.static(path.join(__dirname, "..", "web", "styles")));
+app.set("views", path.join(__dirname, "..", "web"));
+// Set the view engine to EJS
+app.set("view engine", "ejs");
 app.use(routes);
-app.use("/admin", express.static(path.join(__dirname, "..", "web")));
-console.log(path.join(__dirname, "..", "web", "error-logs"));
 
 export let allConnectedSocket: {
   [userId: string]: {

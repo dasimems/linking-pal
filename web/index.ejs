@@ -1,0 +1,27 @@
+<div class="flex flex-col gap-20">
+    <h1 class="font-medium"><%= message ?? "Welcome admin"  %></h1>
+
+    <div class="grid grid-cols-1 gap-10 md:grid-cols-4">
+        <div class="flex flex-col gap-10 p-5 rounded-md shadow-lg">
+
+            <div class="inline-flex items-center gap-2">
+                <i class="fa-solid fa-users"></i>
+                <h2 class=""><%= totalUsers %></h2>
+            </div>
+
+            <h1 class="text-2xl font-bold">Total users</h1>
+        </div>
+        <div class="flex flex-col gap-10 p-5 rounded-md shadow-lg">
+
+            <div class="inline-flex items-center gap-2">
+                <i class="fa-solid fa-file-signature"></i>
+                <h2 class=""><%= totalPosts %></h2>
+            </div>
+
+            <h1 class="text-2xl font-bold">Total Post</h1>
+        </div>
+    </div>
+
+    <%- include('./components/pages/user-list.ejs', {max: 7}) %>
+    <%- include('./components/pages/post-list.ejs', {max: 7}) %>
+</div>

@@ -1,0 +1,16 @@
+<div
+    class="flex flex-col gap-3 w-full <%= className %>">
+    <% if (label) { %><label
+        for="<%= id || "" %>" class="<%= labelClassName %>">
+        <%= label %>
+    </label>
+    
+    <% } %>
+    <input type="<%= inputType || " text"
+        %>"
+    placeholder="<%= placeholder || "Input something here" %>"
+    id=" <%= id || "" %>"
+    name="<%= name %>"
+    class="border py-3 px-5 text-left rounded-md placeholder:text-left <%= inputClassName || "" %>"
+    />
+</div>
