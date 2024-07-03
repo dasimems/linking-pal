@@ -19,6 +19,7 @@ import {
 } from "./controllers/chat";
 import { USER } from "./utils/enums";
 import session from "express-session";
+import MongoStore from "connect-mongo";
 dotenv.config();
 
 export const app: Express = express();
@@ -30,6 +31,7 @@ app.use(
     secret: env.SECRET_KEY as string,
     resave: false,
     saveUninitialized: true,
+    store: MongoStore.create({ mongoUrl: env.CLOUD_CONNECTION_STRING }),
     cookie: { secure: false } // Use true if you are using https
   })
 );

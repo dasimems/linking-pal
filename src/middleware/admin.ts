@@ -2,6 +2,8 @@ import { Session } from "express-session";
 import { MiddleWareType, UserDetailsType } from "../utils/types";
 import { routes, subRoutes } from "../utils/_variables";
 import * as variables from "../utils/_variables";
+import UserSchema from "../models/UserSchema";
+import PostSchema from "../models/PostSchema";
 
 export const isAuthenticated: MiddleWareType = (req, res, next) => {
   const session = req.session as Session & {
@@ -42,7 +44,7 @@ export const isLoggedIn: MiddleWareType = (req, res, next) => {
     return next();
   }
 };
-export const defaultVarsMiddleware: MiddleWareType = (req, res, next) => {
+export const defaultVarsMiddleware: MiddleWareType = async (req, res, next) => {
   // Set default variables
 
   const originalUrl = req.originalUrl;
@@ -50,6 +52,13 @@ export const defaultVarsMiddleware: MiddleWareType = (req, res, next) => {
   console.log(variables.routes.users);
   // Split by '#' to remove the hash fragment
   const urlWithoutHash = urlWithoutQuery.split("#")[0];
+
+  const totalUsersPromise = UserSchema.countDocuments();
+  const totalPostsPromise = PostSchema.countDocuments();
+  const [totalUsers, totalPosts] = await Promise.all([
+    totalUsersPromise,
+    totalPostsPromise
+  ]);
   res.locals = {
     ...res.locals,
     title: "Linking pal | Admin",
@@ -68,15 +77,16 @@ export const defaultVarsMiddleware: MiddleWareType = (req, res, next) => {
     name: undefined,
     variables,
     users: undefined,
-    totalUsers: undefined,
-    totalPosts: undefined,
+    totalUsers,
+    totalPosts,
     posts: undefined,
     post: undefined,
     user: undefined,
     removeSeeAll: undefined,
     max: undefined,
     author: undefined,
-    comments: undefined
+    comments: undefined,
+    maxResult: 10
   }; // Default CSS class name
 
   // Call next() to pass control to the next middleware or route handler

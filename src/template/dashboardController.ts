@@ -33,7 +33,8 @@ export const dashboardController: ControllerType = async (req, res) => {
 export const userController: ControllerType = async (req, res) => {
   const query = req.query;
   const { page } = query || {};
-  const maxData = 10;
+  const maxData = res.locals.maxResult || 10;
+  res.locals.maxResult = maxData;
   const users = await UserSchema.find()
     .skip(
       parseInt((parseInt((page || "1").toString()) - 1).toString()) * maxData
@@ -49,7 +50,8 @@ export const userController: ControllerType = async (req, res) => {
 export const postController: ControllerType = async (req, res) => {
   const query = req.query;
   const { page } = query || {};
-  const maxData = 10;
+  const maxData = res.locals.maxResult || 10;
+  res.locals.maxResult = maxData;
   const posts = await PostSchema.find()
     .skip(
       parseInt((parseInt((page || "1").toString()) - 1).toString()) * maxData
