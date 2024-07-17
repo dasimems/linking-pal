@@ -520,7 +520,7 @@ export const createChatDetails = (
         _id: Types.ObjectId;
       })
     | null
-): ChatDetailsType | undefined => {
+): (ChatDetailsType & { id: Types.ObjectId }) | undefined => {
   if (chat) {
     return {
       created_at: chat.created_at,
@@ -529,7 +529,8 @@ export const createChatDetails = (
       files: chat.files,
       sender_id: chat.sender_id,
       channel: chat.channel,
-      updated_at: chat.updated_at
+      updated_at: chat.updated_at,
+      id: chat._id
     };
   }
 };

@@ -300,18 +300,28 @@ export const markMessageReadController = (socket: Socket & { user?: any }) => {
         );
         const _ = await Promise.all(
           availableMessages
-            .filter((message) => !!message)
-            .map((message) => {
-              return ChatSchema.findByIdAndUpdate(message?._id, {
-                users: message?.users?.map((user) =>
+            .filter((message) => {
+              const presentUser = message?.users.find(
+                (user) =>
                   JSON.stringify(user.user_id) === JSON.stringify(userID)
-                    ? {
-                        ...user,
-                        seen_at: new Date()
-                      }
-                    : user
-                )
-              });
+              );
+              return !!message && presentUser && !presentUser.seen_at;
+            })
+            .map((message) => {
+              return ChatSchema.findByIdAndUpdate(
+                message?._id,
+                {
+                  users: message?.users?.map((user) =>
+                    JSON.stringify(user.user_id) === JSON.stringify(userID)
+                      ? {
+                          ...user,
+                          seen_at: new Date()
+                        }
+                      : user
+                  )
+                },
+                { new: true }
+              );
             })
         );
         sendChannelMessageList(channel_id, socket.user?._id);
